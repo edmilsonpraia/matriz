@@ -345,6 +345,7 @@ const Icon = {
   Sparkles:  I(html`<path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M19 14l.9 2.7L22 17.5l-2.1.8L19 21l-.9-2.7L16 17.5l2.1-.8z"/>`),
   Send:      I(html`<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>`),
   User:      I(html`<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>`),
+  Menu:      I(html`<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>`),
 };
 
 /* ---------- PRIMITIVES ---------- */
@@ -455,62 +456,69 @@ const NAV_GROUPS = [
   ]},
 ];
 
-function Sidebar({route, setRoute, config, currentUser, dispatch, onChangePwd, collapsed, onToggleCollapsed}) {
+function Sidebar({route, setRoute, config, currentUser, dispatch, onChangePwd, collapsed, onToggleCollapsed, mobileOpen, onCloseMobile}) {
   const allowed = new Set(ROLE_PAGES[currentUser.papel] || []);
   const groups = NAV_GROUPS.map(g => ({...g, items: g.items.filter(i => allowed.has(i.key))})).filter(g => g.items.length);
   const [menuOpen, setMenuOpen] = useState(false);
   const initials = currentUser.nome.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
   const roleColor = currentUser.papel==='admin'?'violet':currentUser.papel==='coordenador'?'brand':'emerald';
+  const showText = !collapsed || mobileOpen;
+  const widthCls = mobileOpen ? 'w-64' : (collapsed ? 'md:w-16 w-64' : 'w-64');
+  const handleNav = (key) => { setRoute(key); onCloseMobile?.(); };
 
   return html`
-    <aside class=${'shrink-0 bg-gradient-to-b from-ink-900 to-ink-800 text-ink-100 flex flex-col no-print transition-all duration-200 '+(collapsed?'w-16':'w-64')}>
-      <div class=${'px-3 py-4 border-b border-ink-800/60 flex items-center gap-2 '+(collapsed?'justify-center':'')}>
-        <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg">
-          ${config.logo ? html`<img src=${config.logo} class="w-full h-full rounded-xl object-cover"/>` : html`<${Icon.Grid} size=${20} class="text-white"/>`}
-        </div>
-        ${!collapsed && html`
-          <div class="min-w-0 flex-1">
-            <div class="font-semibold text-white leading-tight truncate">${config.empresa}</div>
-            <div class="text-xs text-ink-400">Matriz · v2.1</div>
+    <${Fragment}>
+      ${mobileOpen && html`<div class="fixed inset-0 bg-black/50 z-40 md:hidden" onClick=${onCloseMobile}></div>`}
+      <aside class=${'bg-gradient-to-b from-ink-900 to-ink-800 text-ink-100 flex flex-col no-print transition-all duration-200 fixed inset-y-0 left-0 z-50 md:relative md:translate-x-0 md:shrink-0 '+widthCls+' '+(mobileOpen?'translate-x-0':'-translate-x-full md:translate-x-0')}>
+        <div class=${'px-3 py-4 border-b border-ink-800/60 flex items-center gap-2 '+(!showText?'md:justify-center':'')}>
+          <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg">
+            ${config.logo ? html`<img src=${config.logo} class="w-full h-full rounded-xl object-cover"/>` : html`<${Icon.Grid} size=${20} class="text-white"/>`}
           </div>
-          <button onClick=${onToggleCollapsed} class="shrink-0 p-1.5 rounded hover:bg-ink-800/70 text-ink-300" title="Recolher">«</button>`}
-      </div>
-      ${collapsed && html`
-        <button onClick=${onToggleCollapsed} class="mx-2 mt-2 py-1.5 rounded hover:bg-ink-800/70 text-ink-300 text-sm" title="Expandir">»</button>`}
-      <nav class="flex-1 p-2 space-y-3 overflow-y-auto overflow-x-hidden">
-        ${groups.map(g => html`
-          <div key=${g.title}>
-            ${!collapsed && html`<div class="px-2 pb-1 text-[10px] font-semibold text-ink-500 uppercase tracking-wider">${g.title}</div>`}
-            <div class="space-y-0.5">
-              ${g.items.map(n => html`
-                <button key=${n.key} onClick=${()=>setRoute(n.key)}
-                  title=${collapsed?n.label:''}
-                  class=${'w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition '+
-                          (route===n.key ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-300 hover:bg-ink-800/70 hover:text-white')+
-                          (collapsed ? ' justify-center' : '')}>
-                  ${n.icon}${!collapsed ? html`<span>${n.label}</span>` : ''}
-                </button>`)}
+          ${showText && html`
+            <div class="min-w-0 flex-1">
+              <div class="font-semibold text-white leading-tight truncate">${config.empresa}</div>
+              <div class="text-xs text-ink-400">Matriz · v2.1</div>
             </div>
-          </div>`)}
-      </nav>
-      <div class="p-2 border-t border-ink-800/60 relative">
-        ${menuOpen && html`
-          <div class=${'absolute bg-white rounded-lg shadow-xl border border-ink-200 overflow-hidden z-10 '+(collapsed?'left-full bottom-0 ml-2 w-48':'bottom-full left-2 right-2 mb-2')}>
-            <button onClick=${()=>{setMenuOpen(false);onChangePwd();}} class="w-full text-left px-3 py-2 text-sm text-ink-700 hover:bg-ink-50 flex items-center gap-2"><${Icon.Settings} size=${14}/> Alterar palavra-passe</button>
-            <button onClick=${()=>{setMenuOpen(false);dispatch({type:'LOGOUT'});}} class="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2"><${Icon.Close} size=${14}/> Terminar sessão</button>
-          </div>`}
-        <button onClick=${()=>setMenuOpen(!menuOpen)} title=${collapsed?currentUser.nome:''}
-          class=${'w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-ink-800/70 transition '+(collapsed?'justify-center':'')}>
-          <div class=${'w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-white text-xs font-semibold bg-gradient-to-br '+(roleColor==='violet'?'from-violet-500 to-violet-700':roleColor==='brand'?'from-brand-500 to-brand-700':'from-emerald-500 to-emerald-700')}>${initials}</div>
-          ${!collapsed && html`
-            <div class="flex-1 min-w-0 text-left">
-              <div class="text-sm font-medium text-white truncate">${currentUser.nome}</div>
-              <div class="text-[10px] text-ink-400 uppercase tracking-wide">${PAPEIS[currentUser.papel]}</div>
-            </div>
-            <span class="text-ink-400">⋯</span>`}
-        </button>
-      </div>
-    </aside>`;
+            <button onClick=${onCloseMobile} class="shrink-0 p-1.5 rounded hover:bg-ink-800/70 text-ink-300 md:hidden" title="Fechar"><${Icon.Close} size=${16}/></button>
+            <button onClick=${onToggleCollapsed} class="shrink-0 p-1.5 rounded hover:bg-ink-800/70 text-ink-300 hidden md:block" title="Recolher">«</button>`}
+        </div>
+        ${collapsed && !mobileOpen && html`
+          <button onClick=${onToggleCollapsed} class="mx-2 mt-2 py-1.5 rounded hover:bg-ink-800/70 text-ink-300 text-sm hidden md:block" title="Expandir">»</button>`}
+        <nav class="flex-1 p-2 space-y-3 overflow-y-auto overflow-x-hidden">
+          ${groups.map(g => html`
+            <div key=${g.title}>
+              ${showText && html`<div class="px-2 pb-1 text-[10px] font-semibold text-ink-500 uppercase tracking-wider">${g.title}</div>`}
+              <div class="space-y-0.5">
+                ${g.items.map(n => html`
+                  <button key=${n.key} onClick=${()=>handleNav(n.key)}
+                    title=${!showText?n.label:''}
+                    class=${'w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition '+
+                            (route===n.key ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-300 hover:bg-ink-800/70 hover:text-white')+
+                            (!showText ? ' md:justify-center' : '')}>
+                    ${n.icon}${showText ? html`<span>${n.label}</span>` : ''}
+                  </button>`)}
+              </div>
+            </div>`)}
+        </nav>
+        <div class="p-2 border-t border-ink-800/60 relative">
+          ${menuOpen && html`
+            <div class=${'absolute bg-white rounded-lg shadow-xl border border-ink-200 overflow-hidden z-10 '+(!showText?'md:left-full md:bottom-0 md:ml-2 md:w-48 bottom-full left-2 right-2 mb-2':'bottom-full left-2 right-2 mb-2')}>
+              <button onClick=${()=>{setMenuOpen(false);onChangePwd();}} class="w-full text-left px-3 py-2 text-sm text-ink-700 hover:bg-ink-50 flex items-center gap-2"><${Icon.Settings} size=${14}/> Alterar palavra-passe</button>
+              <button onClick=${()=>{setMenuOpen(false);dispatch({type:'LOGOUT'});}} class="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2"><${Icon.Close} size=${14}/> Terminar sessão</button>
+            </div>`}
+          <button onClick=${()=>setMenuOpen(!menuOpen)} title=${!showText?currentUser.nome:''}
+            class=${'w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-ink-800/70 transition '+(!showText?'md:justify-center':'')}>
+            <div class=${'w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-white text-xs font-semibold bg-gradient-to-br '+(roleColor==='violet'?'from-violet-500 to-violet-700':roleColor==='brand'?'from-brand-500 to-brand-700':'from-emerald-500 to-emerald-700')}>${initials}</div>
+            ${showText && html`
+              <div class="flex-1 min-w-0 text-left">
+                <div class="text-sm font-medium text-white truncate">${currentUser.nome}</div>
+                <div class="text-[10px] text-ink-400 uppercase tracking-wide">${PAPEIS[currentUser.papel]}</div>
+              </div>
+              <span class="text-ink-400">⋯</span>`}
+          </button>
+        </div>
+      </aside>
+    </${Fragment}>`;
 }
 
 /* ---------- TOPBAR ---------- */
@@ -526,7 +534,7 @@ function findHeaderRow(sheet) {
   return 0;
 }
 
-function TopBar({state, dispatch, title, subtitle}) {
+function TopBar({state, dispatch, title, subtitle, onMenuClick}) {
   const fileRef = useRef(null);
   const onImport = async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
@@ -569,15 +577,18 @@ function TopBar({state, dispatch, title, subtitle}) {
     XLSX.writeFile(wb, 'matriz_competencias.xlsx');
   };
   return html`
-    <header class="h-16 bg-white border-b border-ink-100 px-6 flex items-center justify-between no-print">
-      <div>
-        <h1 class="text-lg font-semibold text-ink-900">${title}</h1>
-        ${subtitle && html`<p class="text-xs text-ink-500">${subtitle}</p>`}
+    <header class="h-16 bg-white border-b border-ink-100 px-3 sm:px-6 flex items-center justify-between gap-2 no-print">
+      <div class="flex items-center gap-2 min-w-0 flex-1">
+        <button onClick=${onMenuClick} class="md:hidden p-2 rounded-lg hover:bg-ink-100 text-ink-700 shrink-0" title="Menu"><${Icon.Menu} size=${20}/></button>
+        <div class="min-w-0">
+          <h1 class="text-base sm:text-lg font-semibold text-ink-900 truncate">${title}</h1>
+          ${subtitle && html`<p class="hidden sm:block text-xs text-ink-500 truncate">${subtitle}</p>`}
+        </div>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 shrink-0">
         <input ref=${fileRef} type="file" accept=".xlsx,.xls" class="hidden" onChange=${onImport}/>
-        <${Button} variant="outline" size="sm" onClick=${()=>fileRef.current.click()}><${Icon.Upload} size=${16}/> Importar</${Button}>
-        <${Button} variant="outline" size="sm" onClick=${onExport}><${Icon.Download} size=${16}/> Excel</${Button}>
+        <${Button} variant="outline" size="sm" onClick=${()=>fileRef.current.click()} title="Importar"><${Icon.Upload} size=${16}/> <span class="hidden sm:inline">Importar</span></${Button}>
+        <${Button} variant="outline" size="sm" onClick=${onExport} title="Exportar Excel"><${Icon.Download} size=${16}/> <span class="hidden sm:inline">Excel</span></${Button}>
       </div>
     </header>`;
 }
@@ -731,7 +742,7 @@ function ColabDetalhe({colab, state, dispatch, onClose, onEdit}) {
         <${Button} variant="outline" size="sm" onClick=${()=>{onEdit(colab); onClose();}}><${Icon.Edit} size=${14}/> Editar</${Button}>
       </div>
 
-      <div class="grid grid-cols-4 gap-3">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div class="p-3 rounded-lg bg-brand-50 border border-brand-100">
           <div class="text-[10px] uppercase tracking-wide text-brand-700 font-medium">Avaliações</div>
           <div class="text-2xl font-bold text-brand-900 tabular-nums mt-1">${avs.length}</div>
@@ -797,12 +808,12 @@ function ColabForm({value, onSave, onClose, state}) {
   return html`
     <div class="space-y-4">
       <${Field} label="Nome completo"><${Input} value=${f.nome} onInput=${e=>setF({...f,nome:e.target.value})}/></${Field}>
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <${Field} label="Departamento"><${Input} list="deps" value=${f.dep} onInput=${e=>setF({...f,dep:e.target.value})}/>
           <datalist id="deps">${deps.map(d=>html`<option key=${d} value=${d}/>`)}</datalist></${Field}>
         <${Field} label="Função"><${Input} value=${f.funcao} onInput=${e=>setF({...f,funcao:e.target.value})}/></${Field}>
       </div>
-      <div class="grid grid-cols-3 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <${Field} label="Nível"><${Select} value=${f.nivel} onChange=${e=>setF({...f,nivel:e.target.value})}>
           ${NIVEIS.map(n=>html`<option key=${n} value=${n}>${NIVEIS_LABEL[n]}</option>`)}</${Select}></${Field}>
         <${Field} label="Site"><${Input} list="sites" value=${f.site} onInput=${e=>setF({...f,site:e.target.value})}/>
@@ -837,7 +848,7 @@ function Colaboradores({state, dispatch}) {
   const avalByColab = useMemo(() => { const m={}; state.avaliacoes.forEach(a => { (m[a.colaboradorId] = m[a.colaboradorId]||[]).push(a); }); return m; }, [state.avaliacoes]);
 
   return html`
-    <div class="p-6 space-y-4 fade-in">
+    <div class="p-4 sm:p-6 space-y-4 fade-in">
       <${Card} class="p-4">
         <div class="flex flex-wrap items-center gap-2">
           <div class="relative flex-1 min-w-[220px]">
@@ -915,7 +926,7 @@ function CompForm({value, onSave, onClose}) {
   return html`
     <div class="space-y-4">
       <${Field} label="Nome da competência"><${Input} value=${f.nome} onInput=${e=>setF({...f,nome:e.target.value})}/></${Field}>
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <${Field} label="Tipo"><${Select} value=${f.tipo} onChange=${e=>setF({...f,tipo:e.target.value})}><option>Técnica</option><option>Comportamental</option></${Select}></${Field}>
         <${Field} label="ISO Relacionada"><${Input} value=${f.iso} placeholder="ex: ISO 9001" onInput=${e=>setF({...f,iso:e.target.value})}/></${Field}>
       </div>
@@ -955,7 +966,7 @@ function Competencias({state, dispatch}) {
     </${Card}>`;
 
   return html`
-    <div class="p-6 space-y-4 fade-in">
+    <div class="p-4 sm:p-6 space-y-4 fade-in">
       <div class="flex items-center justify-between">
         <div><h2 class="text-xl font-semibold text-ink-900">Catálogo de Competências</h2>
           <p class="text-sm text-ink-500">${state.competencias.length} no total · ${tecn.length} técnicas · ${comp.length} comportamentais</p></div>
@@ -978,7 +989,7 @@ function ReqForm({value, onSave, onClose, state}) {
   const [f, setF] = useState(value || {funcao:'',nivel:'Pl',competenciaId:'',esperado:3,peso:10});
   return html`
     <div class="space-y-4">
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <${Field} label="Função"><${Input} list="funcs" value=${f.funcao} onInput=${e=>setF({...f,funcao:e.target.value})}/>
           <datalist id="funcs">${funcoes.map(x=>html`<option key=${x} value=${x}/>`)}</datalist></${Field}>
         <${Field} label="Nível"><${Select} value=${f.nivel} onChange=${e=>setF({...f,nivel:e.target.value})}>
@@ -987,7 +998,7 @@ function ReqForm({value, onSave, onClose, state}) {
       <${Field} label="Competência"><${Select} value=${f.competenciaId} onChange=${e=>setF({...f,competenciaId:e.target.value})}>
         <option value="">Selecionar…</option>
         ${state.competencias.map(c=>html`<option key=${c.id} value=${c.id}>${c.nome} · ${c.tipo}</option>`)}</${Select}></${Field}>
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <${Field} label="Nível esperado (0–5)"><${Input} type="number" min="0" max="5" value=${f.esperado} onInput=${e=>setF({...f,esperado:Number(e.target.value)})}/></${Field}>
         <${Field} label="Peso (%)"><${Input} type="number" min="0" max="100" value=${f.peso} onInput=${e=>setF({...f,peso:Number(e.target.value)})}/></${Field}>
       </div>
@@ -1010,7 +1021,7 @@ function Requisitos({state, dispatch}) {
   };
 
   return html`
-    <div class="p-6 space-y-4 fade-in">
+    <div class="p-4 sm:p-6 space-y-4 fade-in">
       <${Card} class="p-5 bg-gradient-to-br from-brand-50 to-white border-brand-100">
         <div class="flex items-start justify-between gap-4">
           <div>
@@ -1076,7 +1087,7 @@ function Matriz({state}) {
   const headerStyle = {writingMode:'vertical-rl', transform:'rotate(180deg)', whiteSpace:'nowrap', maxHeight:'140px'};
 
   return html`
-    <div class="p-6 space-y-4 fade-in">
+    <div class="p-4 sm:p-6 space-y-4 fade-in">
       <${Card} class="p-4">
         <div class="flex flex-wrap items-center gap-2">
           <${Select} value=${filterDep} onChange=${e=>setFilterDep(e.target.value)} class="w-48">
@@ -1155,7 +1166,7 @@ function AvalForm({value, onSave, onClose, state}) {
 
   return html`
     <div class="space-y-4">
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <${Field} label="Colaborador"><${Select} value=${f.colaboradorId} onChange=${e=>setF({...f,colaboradorId:Number(e.target.value)})}>
           <option value="">Selecionar…</option>
           ${[...state.colaboradores].sort(by('nome')).map(c=>html`<option key=${c.id} value=${c.id}>${c.nome} (${c.dep})</option>`)}</${Select}></${Field}>
@@ -1168,14 +1179,14 @@ function AvalForm({value, onSave, onClose, state}) {
           <${Icon.Zap} size=${16}/>
           Requisito desta função+nível: esperado ${sugerido.esperado}, peso ${sugerido.peso}% (preenchido automaticamente)
         </div>`}
-      <div class="grid grid-cols-4 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <${Field} label="Peso (%)"><${Input} type="number" min="0" max="100" value=${f.peso} onInput=${e=>setF({...f,peso:Number(e.target.value)})}/></${Field}>
         <${Field} label="Nível Atual"><${Input} type="number" min="0" max="5" value=${f.atual} onInput=${e=>setF({...f,atual:Number(e.target.value)})}/></${Field}>
         <${Field} label="Nível Esperado"><${Input} type="number" min="0" max="5" value=${f.esperado} onInput=${e=>setF({...f,esperado:Number(e.target.value)})}/></${Field}>
         <${Field} label="Data"><${Input} type="date" value=${f.dataAvaliacao} onInput=${e=>setF({...f,dataAvaliacao:e.target.value})}/></${Field}>
       </div>
       <${Field} label="Plano de desenvolvimento"><${Input} value=${f.plano} placeholder="ex: Formação ISO 9001" onInput=${e=>setF({...f,plano:e.target.value})}/></${Field}>
-      <div class="grid grid-cols-3 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <${Field} label="Responsável"><${Input} value=${f.responsavel} onInput=${e=>setF({...f,responsavel:e.target.value})}/></${Field}>
         <${Field} label="Prazo"><${Input} type="month" value=${f.prazo} onInput=${e=>setF({...f,prazo:e.target.value})}/></${Field}>
         <${Field} label="Plano de carreira"><${Input} value=${f.carreira} onInput=${e=>setF({...f,carreira:e.target.value})}/></${Field}>
@@ -1198,7 +1209,7 @@ function Avaliacoes({state, dispatch}) {
   }).filter(r => !q || (r.colabNome+' '+r.compNome+' '+r.dep).toLowerCase().includes(q.toLowerCase()));
 
   return html`
-    <div class="p-6 space-y-4 fade-in">
+    <div class="p-4 sm:p-6 space-y-4 fade-in">
       <${Card} class="p-4">
         <div class="flex items-center gap-2">
           <div class="relative flex-1">
@@ -1264,7 +1275,7 @@ function Planos({state}) {
   const isSoon = (p) => { if (!p) return false; const d=new Date(p); const diff=(d-now)/86400000; return diff>=0 && diff<=60; };
 
   return html`
-    <div class="p-6 space-y-4 fade-in">
+    <div class="p-4 sm:p-6 space-y-4 fade-in">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <${Stat} label="Planos ativos" value=${rows.length} tone="brand" icon=${html`<${Icon.Plan}/>`}/>
         <${Stat} label="Prazo em risco (≤ 60 dias)" value=${rows.filter(r=>isSoon(r.prazo)).length} tone="amber" icon=${html`<${Icon.Trend}/>`}/>
@@ -1334,7 +1345,7 @@ function NineBox({state}) {
   };
 
   return html`
-    <div class="p-6 space-y-4 fade-in">
+    <div class="p-4 sm:p-6 space-y-4 fade-in">
       <${Card} class="p-4 flex items-center gap-3">
         <div class="text-sm text-ink-600 mr-2">Filtrar:</div>
         <${Select} value=${filterDep} onChange=${e=>setFilterDep(e.target.value)} class="w-64">
@@ -1391,7 +1402,7 @@ function Evolucao({state, dispatch}) {
   const scoresMed = serie.map(s => s.avaliacoes.length ? s.avaliacoes.reduce((a,x)=>a+score(x),0)/s.avaliacoes.length : 0);
 
   return html`
-    <div class="p-6 space-y-4 fade-in">
+    <div class="p-4 sm:p-6 space-y-4 fade-in">
       <${Card} class="p-5">
         <div class="flex items-center justify-between mb-3">
           <div><h3 class="font-semibold text-ink-900">Evolução da Matriz</h3>
@@ -1465,7 +1476,7 @@ function AdminUsers({state, dispatch}) {
       <div class="space-y-4">
         <${Field} label="Nome"><${Input} value=${f.nome} onInput=${e=>setF({...f,nome:e.target.value})}/></${Field}>
         <${Field} label="Email"><${Input} type="email" value=${f.email} onInput=${e=>setF({...f,email:e.target.value})}/></${Field}>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <${Field} label="Papel"><${Select} value=${f.papel} onChange=${e=>setF({...f,papel:e.target.value})}>
             ${Object.entries(PAPEIS).map(([k,v])=>html`<option key=${k} value=${k}>${v}</option>`)}</${Select}></${Field}>
           <${Field} label="Estado"><${Select} value=${String(f.ativo)} onChange=${e=>setF({...f,ativo:e.target.value==='true'})}>
@@ -1672,7 +1683,7 @@ function Admin({state, dispatch}) {
     {key:'sistema',  label:'Sistema'},
   ];
   return html`
-    <div class="p-6 space-y-4 fade-in">
+    <div class="p-4 sm:p-6 space-y-4 fade-in">
       <${Tabs} tabs=${tabs} value=${tab} onChange=${setTab}/>
       ${tab==='config'   && html`<${AdminConfig} state=${state} dispatch=${dispatch}/>`}
       ${tab==='users'    && html`<${AdminUsers} state=${state} dispatch=${dispatch}/>`}
@@ -2052,13 +2063,13 @@ function AIAssistant({state, dispatch, onOpenColab}) {
     <${Fragment}>
       ${!open && html`
         <button onClick=${()=>setOpen(true)}
-          class="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-brand-600 text-white shadow-xl flex items-center justify-center hover:scale-105 transition no-print"
+          class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-brand-600 text-white shadow-xl flex items-center justify-center hover:scale-105 transition no-print"
           title="Assistente IA">
           <${Icon.Sparkles} size=${24}/>
         </button>`}
 
       ${open && html`
-        <div class="fixed bottom-6 right-6 z-40 w-[420px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-3rem)] bg-white rounded-2xl shadow-2xl border border-ink-200 flex flex-col overflow-hidden no-print fade-in">
+        <div class="fixed z-40 bg-white shadow-2xl border border-ink-200 flex flex-col overflow-hidden no-print fade-in inset-2 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[420px] sm:h-[600px] sm:max-h-[calc(100vh-3rem)] sm:rounded-2xl rounded-xl">
           <div class="px-4 py-3 bg-gradient-to-r from-violet-600 to-brand-700 text-white flex items-center gap-2">
             <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><${Icon.Sparkles} size=${16}/></div>
             <div class="flex-1">
@@ -2123,6 +2134,7 @@ function App() {
   const [route, setRoute] = useState('dashboard');
   const [showChangePwd, setShowChangePwd] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed')==='1');
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [aiColabView, setAiColabView] = useState(null);
   const [aiColabEdit, setAiColabEdit] = useState(null);
   useEffect(() => { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }, [state]);
@@ -2155,9 +2167,10 @@ function App() {
       <${Sidebar} route=${currentRoute} setRoute=${setRoute} config=${state.config}
                   currentUser=${state.currentUser} dispatch=${dispatch}
                   onChangePwd=${()=>setShowChangePwd(true)}
-                  collapsed=${sidebarCollapsed} onToggleCollapsed=${()=>setSidebarCollapsed(!sidebarCollapsed)}/>
-      <div class="flex-1 flex flex-col overflow-hidden">
-        <${TopBar} state=${state} dispatch=${dispatch} title=${title} subtitle=${subtitle}/>
+                  collapsed=${sidebarCollapsed} onToggleCollapsed=${()=>setSidebarCollapsed(!sidebarCollapsed)}
+                  mobileOpen=${mobileDrawerOpen} onCloseMobile=${()=>setMobileDrawerOpen(false)}/>
+      <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+        <${TopBar} state=${state} dispatch=${dispatch} title=${title} subtitle=${subtitle} onMenuClick=${()=>setMobileDrawerOpen(true)}/>
         <main class="flex-1 overflow-auto">
           ${currentRoute==='dashboard'     && html`<${Dashboard} state=${state}/>`}
           ${currentRoute==='colaboradores' && html`<${Colaboradores} state=${state} dispatch=${dispatch}/>`}
