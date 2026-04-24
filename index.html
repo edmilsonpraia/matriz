@@ -1,0 +1,2194 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Matriz de Competências</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+      colors: {
+        brand: {50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a',950:'#172554'},
+        ink:   {50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1',400:'#94a3b8',500:'#64748b',600:'#475569',700:'#334155',800:'#1e293b',900:'#0f172a',950:'#020617'}
+      },
+      boxShadow: { card: '0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06)', soft: '0 4px 20px -4px rgb(15 23 42 / 0.08)' }
+    }
+  }
+};
+</script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/htm@3.1.1/dist/htm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  html,body{height:100%;}
+  body{font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px;}
+  ::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
+  .heatcell{transition:transform .15s ease;}
+  .heatcell:hover{transform:scale(1.15);z-index:5;}
+  .fade-in{animation:fi .25s ease-out;}
+  @keyframes fi{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+  @media print { .no-print{display:none!important;} }
+</style>
+</head>
+<body class="bg-ink-50 text-ink-900">
+<div id="app"></div>
+
+<script>
+/* =============================================================
+ * MATRIZ DE COMPETÊNCIAS · SPA · v2.0
+ * Dashboard · Colaboradores · Competências · Requisitos · Matriz
+ * Avaliações · Planos · Nine-Box · Evolução · Admin
+ * ============================================================= */
+const { useState, useEffect, useMemo, useRef, useReducer, useCallback, Fragment } = React;
+const html = htm.bind(React.createElement);
+
+/* ---------- SEED DATA ---------- */
+const SEED_COLABORADORES = [
+  {id:1,nome:"Anes Fernandes",dep:"Administrativo",funcao:"Assistente Administrativo",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:2,nome:"Angelo Frederico",dep:"HST",funcao:"Técnico de HST",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:3,nome:"António Gaspar",dep:"Engenharia",funcao:"Engº. Electromecânico",nivel:"Jr",site:"AHCC",potencial:3},
+  {id:4,nome:"Basilia Alice Arceno",dep:"Administrativo",funcao:"Coordenadora Administrativa",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:5,nome:"Cândido Alfredo",dep:"Administrativo",funcao:"Assistente Administrativo",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:6,nome:"Carlos Luango",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:1},
+  {id:7,nome:"Carlos Capita Gomes",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:8,nome:"Daniel Chipilica Chiwale",dep:"Engenharia",funcao:"Técnico Fiscal de Obras Civis",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:9,nome:"Domingos Acácio",dep:"HST",funcao:"Técnico de Segurança no Trabalho",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:10,nome:"Edson da Conceição",dep:"Administrativo",funcao:"Técnico Administrativo",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:11,nome:"Elionay Malungo",dep:"Geologia",funcao:"Geólogo",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:12,nome:"Elvio W. Madureira",dep:"Informática",funcao:"Técnico de IT",nivel:"Pl",site:"AHCC",potencial:3},
+  {id:13,nome:"Gabriel A. Pedro",dep:"HST",funcao:"Técnico de HST",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:14,nome:"Gregório Victor",dep:"HST",funcao:"Técnico de HST",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:15,nome:"Hedwelde Paz",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:16,nome:"Hermenegildo Van-Dúnen",dep:"Topografia",funcao:"Topógrafo",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:17,nome:"João W. Kalley",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:18,nome:"Jussara Lourenço",dep:"Ambiental",funcao:"Engª. de Meio Ambiente",nivel:"Pl",site:"AHCC",potencial:3},
+  {id:19,nome:"Henriques Lucas",dep:"Topografia",funcao:"Auxiliar de Topografia",nivel:"Jr",site:"AHCC",potencial:2},
+  {id:20,nome:"Mario Barros",dep:"Administrativo",funcao:"Auxiliar Administrativo",nivel:"Jr",site:"AHCC",potencial:2},
+  {id:21,nome:"Miguel Mayonde",dep:"Capital Humano",funcao:"Técnico de Capital Humano",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:22,nome:"Noé Bandeira",dep:"HST",funcao:"Técnico de HST",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:23,nome:"Pedro José",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:1},
+  {id:24,nome:"Rogério Miguel",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:25,nome:"Sabino Kawawa",dep:"Topografia",funcao:"Auxiliar de Topografia",nivel:"Jr",site:"AHCC",potencial:2},
+  {id:26,nome:"Sérgio Bernardo",dep:"Engenharia",funcao:"Projectista",nivel:"Pl",site:"AHCC",potencial:3},
+  {id:27,nome:"Tengo Vicente",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:28,nome:"Vladimir dos Santos",dep:"HST",funcao:"Técnico de HST",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:29,nome:"Vicente Justino José",dep:"Ambiental",funcao:"Engº. de Meio Ambiente",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:30,nome:"José Gomes Calulo",dep:"Topografia",funcao:"Auxiliar de Topografia",nivel:"Jr",site:"AHCC",potencial:1},
+  {id:31,nome:"Eliseu Messo",dep:"Engenharia",funcao:"Engº. Civil",nivel:"Pl",site:"AHCC",potencial:3},
+  {id:32,nome:"Andrei Eini",dep:"Civil",funcao:"Técnico Fiscal de Obras Civis",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:33,nome:"António da Cruz Branco",dep:"Controlo Tecnológico",funcao:"Técnico Fiscal em Geotécnia",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:34,nome:"Antonio Pineau",dep:"Engenharia",funcao:"Engº. de Medições e Relatórios",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:35,nome:"Bruno de Sousa",dep:"Geologia",funcao:"Geólogo",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:36,nome:"Carlos Baptista",dep:"Geotécnia",funcao:"Gerente Electromecânica",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:37,nome:"Carlos Filipe Rodrigues",dep:"Geologia",funcao:"Geólogo",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:38,nome:"Caroline Borchardt",dep:"Engenharia",funcao:"Engª. de Planeamento",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:39,nome:"Daulo Carneiro",dep:"Civil",funcao:"Engº. Civil",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:40,nome:"Dulio António de Oliveira",dep:"Engenharia",funcao:"Engº. Civil",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:41,nome:"Edgar Lira Rangel",dep:"Geotécnia",funcao:"Engº. Geotécnico",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:42,nome:"Eduardo Aguilar Gonzales",dep:"Topografia",funcao:"Topógrafo",nivel:"Sr",site:"AHCC",potencial:2},
+  {id:43,nome:"Gilson Correia da Silva",dep:"Engenharia",funcao:"Electrotecnia e Comissionamento",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:44,nome:"Ilidio José Veloso Cohen",dep:"Civil",funcao:"Gerente de Obras Civis",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:45,nome:"João Paulo Alves",dep:"Qualidade",funcao:"Engenheiro de Qualidade",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:46,nome:"Jorge Cerejo Brasil",dep:"HST",funcao:"Técnico de Segurança no Trabalho",nivel:"Sr",site:"AHCC",potencial:2},
+  {id:47,nome:"José Toledo",dep:"Civil",funcao:"Engº. Civil",nivel:"Sr",site:"AHCC",potencial:2},
+  {id:48,nome:"Karoline Guimarães",dep:"Engenharia",funcao:"Gestora de Contratos",nivel:"Sr",site:"AIBC_SEDE",potencial:3},
+  {id:49,nome:"Paulo Resende",dep:"Civil",funcao:"Engº. Civil",nivel:"Sr",site:"AHCC",potencial:2},
+  {id:50,nome:"Luiggi Virgilli Guimarães",dep:"Administração da Fiscalização",funcao:"Diretor da Fiscalização",nivel:"Sr",site:"AIBC_SEDE",potencial:3},
+  {id:51,nome:"Marcelo Bareto",dep:"Civil",funcao:"Engº. Civil",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:52,nome:"Marcio Painhas",dep:"Engenharia",funcao:"Engº. de Contratos",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:53,nome:"Mário G.L. Tejo",dep:"HST",funcao:"Engº. de Segurança no Trabalho",nivel:"Sr",site:"AHCC",potencial:2},
+  {id:54,nome:"Mauricio Vieiro",dep:"Engenharia",funcao:"Electromecânico",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:55,nome:"Nelson de Oliveira Custódio",dep:"Administração da Fiscalização",funcao:"Chefe da Fiscalização",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:56,nome:"Nielson Alves",dep:"Fiscalização",funcao:"Electrotécnico de Montagem",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:57,nome:"Paulo Roberto Oliveira",dep:"Geotécnia",funcao:"Engº. Geotécnico",nivel:"Sr",site:"AHCC",potencial:2},
+  {id:58,nome:"Pedro Gil Natário",dep:"Geotécnia",funcao:"Engº. Geotécnico",nivel:"Sr",site:"AHCC",potencial:2},
+  {id:59,nome:"Zedequias Bento dos Santos",dep:"Topografia",funcao:"Topógrafo",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:60,nome:"Filipe e Sousa",dep:"Engenharia",funcao:"Electromecânico",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:61,nome:"Adilson Mangueira Nelumba",dep:"Conselho de Administração",funcao:"Presidente do Conselho de Administração",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:62,nome:"Abel Lopes",dep:"Transportes",funcao:"Motorista",nivel:"Pl",site:"SEDE",potencial:1},
+  {id:63,nome:"Afonso Nachiqueleyi",dep:"Comunicação e Marketing",funcao:"Técnico Designer",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:64,nome:"Aline Falcão Costa",dep:"Comercial",funcao:"Diretora Comercial",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:65,nome:"Angélica Fonseca",dep:"Seguros",funcao:"Diretora de Seguros",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:66,nome:"Anisio Samalunga",dep:"Administrativo",funcao:"Auxiliar de Manutenção",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:67,nome:"António E. Fernandes",dep:"Transportes",funcao:"Motorista",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:68,nome:"António Ecunde",dep:"Administrativo",funcao:"Auxiliar de Logística",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:69,nome:"Baptista Alberto",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:1},
+  {id:70,nome:"Branco Pedro",dep:"Administrativo",funcao:"Auxiliar de Logística",nivel:"Jr",site:"SEDE",potencial:2},
+  {id:71,nome:"Bráulio dos Santos",dep:"Relações Institucionais",funcao:"Técnico de Relações Institucionais",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:72,nome:"Bruyalcin Cabenda",dep:"Capital Humano",funcao:"Diretor de Capital Humano",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:73,nome:"Carlos Cassinda",dep:"Departamento Médico",funcao:"Diretor do Departamento Médico",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:74,nome:"Cecília Cândido",dep:"Comunicação e Marketing",funcao:"Coordenadora de Marketing",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:75,nome:"Claúdio Barros",dep:"Administrativo",funcao:"Diretor de Planeamento AIBC",nivel:"Sr",site:"AIBC_SEDE",potencial:3},
+  {id:76,nome:"Claudio Bonifácio",dep:"Relações Institucionais",funcao:"Técnico de Relações Institucionais",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:77,nome:"Dangereux G. António",dep:"Transportes",funcao:"Diretor de Transportes",nivel:"Sr",site:"SEDE",potencial:2},
+  {id:78,nome:"Delfina Baby",dep:"Contabilidade e Finanças",funcao:"Técnica de Finanças",nivel:"Pl",site:"SEDE",potencial:3},
+  {id:79,nome:"Djamila Capita",dep:"Lisandra Eventos",funcao:"Coordenadora de Eventos",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:80,nome:"Domingos Bartolomeu",dep:"Transportes",funcao:"Motorista",nivel:"Sr",site:"SEDE",potencial:2},
+  {id:81,nome:"Muvulameno Wanuque",dep:"Gabinete Jurídico",funcao:"Advogada Sénior",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:82,nome:"Emanuel de Oliveira",dep:"QHSE",funcao:"Diretor de QHSE",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:83,nome:"Eleutério Sampaio",dep:"Audio Visual",funcao:"Video Maker",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:84,nome:"Ermelinda dos Santos",dep:"Administrativo",funcao:"Supervisora Administrativa",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:85,nome:"Filipe Marques",dep:"Transportes",funcao:"Motorista",nivel:"Sr",site:"SEDE",potencial:2},
+  {id:86,nome:"Flórida Bastos",dep:"QHSE",funcao:"Técnica de QHSE",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:87,nome:"Grildo Francisco",dep:"Petróleo e Gás",funcao:"Diretor de Petróleo, Gás e Biocombustíveis",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:88,nome:"Guilherme Máquina",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:1},
+  {id:89,nome:"Helena Ignace",dep:"QHSE",funcao:"Técnica Sénior de QHSE",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:90,nome:"Hélio Mangueira Nelumba",dep:"Conselho de Administração",funcao:"Administrador Executivo",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:91,nome:"Henrique Afonso",dep:"Administrativo",funcao:"Auxiliar de Manutenção",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:92,nome:"Jefferson Neto",dep:"Comunicação e Marketing",funcao:"Coordenador de Comunicação",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:93,nome:"João Correia",dep:"Administrativo",funcao:"Auxiliar de Logística",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:94,nome:"José Cardoso",dep:"Transportes",funcao:"Motorista",nivel:"Jr",site:"SEDE",potencial:2},
+  {id:95,nome:"Nadia da Silva",dep:"Petróleo e Gás",funcao:"Engenheira Geóloga Sénior",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:96,nome:"Julmara Serrado",dep:"Comercial",funcao:"Coordenadora Comercial",nivel:"Pl",site:"SEDE",potencial:3},
+  {id:97,nome:"Kudimuenha Gonçalves",dep:"Capital Humano",funcao:"Técnica Sénior de Capital Humano",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:98,nome:"Pedro Cristovão",dep:"Tecnologia de Informação",funcao:"Diretor de IT",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:99,nome:"Ana Capata",dep:"Contabilidade e Finanças",funcao:"Diretora de Contabilidade e Finanças",nivel:"Sr",site:"SEDE",potencial:3}
+];
+
+const SEED_COMPETENCIAS = [
+  {id:'c1',nome:'Normas e Padrões ISO',tipo:'Técnica',iso:'ISO 9001'},
+  {id:'c2',nome:'Qualidade e Controlo',tipo:'Técnica',iso:'ISO 9001'},
+  {id:'c3',nome:'Segurança no Trabalho',tipo:'Técnica',iso:'ISO 45001'},
+  {id:'c4',nome:'Ambiente e Sustentabilidade',tipo:'Técnica',iso:'ISO 14001'},
+  {id:'c5',nome:'Fiscalização de Obras',tipo:'Técnica',iso:''},
+  {id:'c6',nome:'Topografia',tipo:'Técnica',iso:''},
+  {id:'c7',nome:'Geologia Aplicada',tipo:'Técnica',iso:''},
+  {id:'c8',nome:'Geotecnia',tipo:'Técnica',iso:''},
+  {id:'c9',nome:'Engenharia Civil',tipo:'Técnica',iso:''},
+  {id:'c10',nome:'Engenharia Eletromecânica',tipo:'Técnica',iso:''},
+  {id:'c11',nome:'Planeamento e Controlo',tipo:'Técnica',iso:''},
+  {id:'c12',nome:'Gestão de Contratos',tipo:'Técnica',iso:''},
+  {id:'c13',nome:'Tecnologias de Informação',tipo:'Técnica',iso:''},
+  {id:'c14',nome:'Contabilidade e Finanças',tipo:'Técnica',iso:''},
+  {id:'c15',nome:'Liderança',tipo:'Comportamental',iso:''},
+  {id:'c16',nome:'Comunicação',tipo:'Comportamental',iso:''},
+  {id:'c17',nome:'Trabalho em Equipa',tipo:'Comportamental',iso:''},
+  {id:'c18',nome:'Iniciativa e Proatividade',tipo:'Comportamental',iso:''},
+  {id:'c19',nome:'Resolução de Problemas',tipo:'Comportamental',iso:''},
+  {id:'c20',nome:'Ética e Integridade',tipo:'Comportamental',iso:''}
+];
+
+const SEED_AVALIACOES = [
+  {id:'a1',colaboradorId:1,competenciaId:'c1',peso:20,atual:4,esperado:5,plano:'Formação ISO',responsavel:'Direção',prazo:'2026-07',carreira:'Promoção Coordenador',dataAvaliacao:'2026-01-15'},
+  {id:'a2',colaboradorId:1,competenciaId:'c15',peso:15,atual:4,esperado:5,plano:'Mentoria interna',responsavel:'Direção',prazo:'2026-07',carreira:'Promoção Coordenador',dataAvaliacao:'2026-01-15'},
+  {id:'a3',colaboradorId:2,competenciaId:'c2',peso:15,atual:3,esperado:5,plano:'Curso de auditoria',responsavel:'RH',prazo:'2026-09',carreira:'Sénior',dataAvaliacao:'2026-01-15'},
+  {id:'a4',colaboradorId:2,competenciaId:'c16',peso:10,atual:3,esperado:4,plano:'Workshop comunicação',responsavel:'RH',prazo:'2026-10',carreira:'Sénior',dataAvaliacao:'2026-01-15'},
+  {id:'a5',colaboradorId:3,competenciaId:'c3',peso:10,atual:2,esperado:4,plano:'Treino SST',responsavel:'RH',prazo:'2026-08',carreira:'Pleno',dataAvaliacao:'2026-01-15'},
+  {id:'a6',colaboradorId:3,competenciaId:'c10',peso:20,atual:3,esperado:4,plano:'Curso eletromecânica avançada',responsavel:'Engenharia',prazo:'2026-11',carreira:'Pleno',dataAvaliacao:'2026-01-15'}
+];
+
+const SEED_REQUISITOS = [
+  {id:'r1',funcao:'Motorista',nivel:'Pl',competenciaId:'c3',esperado:3,peso:30},
+  {id:'r2',funcao:'Motorista',nivel:'Pl',competenciaId:'c20',esperado:4,peso:25},
+  {id:'r3',funcao:'Motorista',nivel:'Pl',competenciaId:'c17',esperado:3,peso:20},
+  {id:'r4',funcao:'Engº. Civil',nivel:'Sr',competenciaId:'c9',esperado:5,peso:35},
+  {id:'r5',funcao:'Engº. Civil',nivel:'Sr',competenciaId:'c15',esperado:4,peso:20},
+  {id:'r6',funcao:'Engº. Civil',nivel:'Sr',competenciaId:'c11',esperado:4,peso:20},
+  {id:'r7',funcao:'Técnico de HST',nivel:'Pl',competenciaId:'c3',esperado:4,peso:40},
+  {id:'r8',funcao:'Técnico de HST',nivel:'Pl',competenciaId:'c1',esperado:3,peso:20},
+  {id:'r9',funcao:'Geólogo',nivel:'Pl',competenciaId:'c7',esperado:4,peso:40},
+  {id:'r10',funcao:'Topógrafo',nivel:'Pl',competenciaId:'c6',esperado:4,peso:45}
+];
+
+const DEFAULT_CONFIG = {
+  empresa: 'RH',
+  logo: '',
+  corPrimaria: '#2563eb',
+  supabaseUrl: '',
+  supabaseKey: '',
+  cloudHabilitado: false
+};
+
+const SEED_USERS = [
+  {id:'u1',nome:'Administrador',email:'admin@empresa.pt',papel:'admin',senha:'admin123',ativo:true},
+  {id:'u2',nome:'Coordenador RH',email:'coord@empresa.pt',papel:'coordenador',senha:'coord123',ativo:true},
+  {id:'u3',nome:'Utilizador Demo',email:'user@empresa.pt',papel:'usuario',senha:'user123',ativo:true}
+];
+
+const NIVEIS = ['Jr','Pl','Sr'];
+const NIVEIS_LABEL = {Jr:'Júnior',Pl:'Pleno',Sr:'Sénior'};
+const POTENCIAL_LABEL = {1:'Baixo',2:'Médio',3:'Alto'};
+const PAPEIS = {admin:'Administrador',coordenador:'Coordenador',usuario:'Utilizador'};
+const ROLE_PAGES = {
+  admin:       ['dashboard','evolucao','ninebox','colaboradores','competencias','requisitos','avaliacoes','planos','matriz','admin'],
+  coordenador: ['dashboard','evolucao','ninebox','colaboradores','competencias','requisitos','avaliacoes','planos','matriz'],
+  usuario:     ['dashboard','colaboradores','avaliacoes','matriz']
+};
+
+/* ---------- STORE ---------- */
+const STORE_KEY = 'matriz_competencias_v2';
+const initialState = () => {
+  const raw = localStorage.getItem(STORE_KEY);
+  if (raw) { try {
+    const s = JSON.parse(raw);
+    return {
+      colaboradores: s.colaboradores || SEED_COLABORADORES,
+      competencias:  s.competencias  || SEED_COMPETENCIAS,
+      avaliacoes:    s.avaliacoes    || SEED_AVALIACOES,
+      requisitos:    s.requisitos    || SEED_REQUISITOS,
+      snapshots:     s.snapshots     || [],
+      users:         s.users         || SEED_USERS,
+      config: { ...DEFAULT_CONFIG, ...(s.config||{}) },
+      currentUser:   s.currentUser   || null,
+      loginError:    null
+    };
+  } catch(e){} }
+  return {
+    colaboradores: SEED_COLABORADORES, competencias: SEED_COMPETENCIAS,
+    avaliacoes: SEED_AVALIACOES, requisitos: SEED_REQUISITOS,
+    snapshots: [], users: SEED_USERS, config: DEFAULT_CONFIG,
+    currentUser: null, loginError: null
+  };
+};
+
+function reducer(state, action) {
+  const K = action.type;
+  if (K==='ADD_COLAB') { const id = Math.max(0,...state.colaboradores.map(c=>c.id))+1; return {...state, colaboradores:[...state.colaboradores, {potencial:2, ...action.payload, id}]}; }
+  if (K==='UPD_COLAB') return {...state, colaboradores: state.colaboradores.map(c=>c.id===action.payload.id?{...c,...action.payload}:c)};
+  if (K==='DEL_COLAB') return {...state, colaboradores: state.colaboradores.filter(c=>c.id!==action.payload), avaliacoes: state.avaliacoes.filter(a=>a.colaboradorId!==action.payload)};
+  if (K==='ADD_COMP')  { const id = 'c'+Date.now().toString(36); return {...state, competencias:[...state.competencias, {...action.payload, id}]}; }
+  if (K==='UPD_COMP')  return {...state, competencias: state.competencias.map(c=>c.id===action.payload.id?{...c,...action.payload}:c)};
+  if (K==='DEL_COMP')  return {...state, competencias: state.competencias.filter(c=>c.id!==action.payload), avaliacoes: state.avaliacoes.filter(a=>a.competenciaId!==action.payload), requisitos: state.requisitos.filter(r=>r.competenciaId!==action.payload)};
+  if (K==='ADD_AVAL')  { const id = 'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); return {...state, avaliacoes:[...state.avaliacoes, {dataAvaliacao:new Date().toISOString().slice(0,10), ...action.payload, id}]}; }
+  if (K==='UPD_AVAL')  return {...state, avaliacoes: state.avaliacoes.map(a=>a.id===action.payload.id?{...a,...action.payload}:a)};
+  if (K==='DEL_AVAL')  return {...state, avaliacoes: state.avaliacoes.filter(a=>a.id!==action.payload)};
+  if (K==='ADD_REQ')   { const id = 'r'+Date.now().toString(36); return {...state, requisitos:[...state.requisitos, {...action.payload, id}]}; }
+  if (K==='UPD_REQ')   return {...state, requisitos: state.requisitos.map(r=>r.id===action.payload.id?{...r,...action.payload}:r)};
+  if (K==='DEL_REQ')   return {...state, requisitos: state.requisitos.filter(r=>r.id!==action.payload)};
+  if (K==='APPLY_REQ') {
+    const created = [];
+    state.colaboradores.forEach(c => {
+      const reqs = state.requisitos.filter(r => r.funcao===c.funcao && r.nivel===c.nivel);
+      reqs.forEach(r => {
+        const exists = state.avaliacoes.some(a => a.colaboradorId===c.id && a.competenciaId===r.competenciaId);
+        if (!exists) created.push({
+          id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+          colaboradorId:c.id, competenciaId:r.competenciaId,
+          peso:r.peso, atual:0, esperado:r.esperado,
+          plano:'', responsavel:'', prazo:'', carreira:'',
+          dataAvaliacao: new Date().toISOString().slice(0,10)
+        });
+      });
+    });
+    return {...state, avaliacoes:[...state.avaliacoes, ...created]};
+  }
+  if (K==='ADD_SNAP')  { const id = 's'+Date.now().toString(36); return {...state, snapshots:[...state.snapshots, {id, data:new Date().toISOString(), descricao:action.payload||'Snapshot', avaliacoes:JSON.parse(JSON.stringify(state.avaliacoes))}]}; }
+  if (K==='DEL_SNAP')  return {...state, snapshots: state.snapshots.filter(s=>s.id!==action.payload)};
+  if (K==='ADD_USER')  { const id = 'u'+Date.now().toString(36); return {...state, users:[...state.users, {...action.payload, id}]}; }
+  if (K==='UPD_USER')  return {...state, users: state.users.map(u=>u.id===action.payload.id?{...u,...action.payload}:u)};
+  if (K==='DEL_USER')  return {...state, users: state.users.filter(u=>u.id!==action.payload)};
+  if (K==='UPD_CFG')   return {...state, config: {...state.config, ...action.payload}};
+  if (K==='IMPORT')    return {...state, ...action.payload};
+  if (K==='LOAD')      return {...action.payload, currentUser:state.currentUser};
+  if (K==='RESET')     return {...initialState(), currentUser:state.currentUser};
+  if (K==='LOGIN') {
+    const u = state.users.find(x => x.email.toLowerCase()===String(action.payload.email||'').toLowerCase().trim() && x.senha===action.payload.senha && x.ativo);
+    if (!u) return {...state, loginError:'Credenciais inválidas ou utilizador inativo.'};
+    return {...state, currentUser:{id:u.id,nome:u.nome,email:u.email,papel:u.papel}, loginError:null};
+  }
+  if (K==='LOGOUT')    return {...state, currentUser:null, loginError:null};
+  if (K==='CLR_ERR')   return {...state, loginError:null};
+  if (K==='CHG_PWD')   return {...state, users: state.users.map(u=>u.id===action.payload.id?{...u,senha:action.payload.senha}:u)};
+  return state;
+}
+
+/* ---------- UTILS ---------- */
+const uniq = (arr) => [...new Set(arr)];
+const by = (k) => (a,b) => (a[k]>b[k]?1:a[k]<b[k]?-1:0);
+const gap = (a) => Math.max(0,(a.esperado||0)-(a.atual||0));
+const score = (a) => (a.peso||0) * (a.atual||0) / 5;
+const gapClass = (g) => g===0?'bg-emerald-500':g===1?'bg-lime-500':g===2?'bg-amber-500':g===3?'bg-orange-500':'bg-rose-600';
+
+/* ---------- ICONS ---------- */
+const I = (d, sw=2) => (props={}) => html`<svg xmlns="http://www.w3.org/2000/svg" width=${props.size||20} height=${props.size||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=${sw} stroke-linecap="round" stroke-linejoin="round" class=${props.class||''}>${d}</svg>`;
+const Icon = {
+  Dash:      I(html`<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>`),
+  Users:     I(html`<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`),
+  Grid:      I(html`<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>`),
+  Star:      I(html`<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>`),
+  Clipboard: I(html`<rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-4"/><path d="M9 14h6M9 10h6M9 18h4"/>`),
+  Plan:      I(html`<path d="M3 3v18h18"/><path d="M7 15l4-4 4 4 5-5"/>`),
+  Search:    I(html`<circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>`),
+  Plus:      I(html`<path d="M12 5v14M5 12h14"/>`),
+  Edit:      I(html`<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/>`),
+  Trash:     I(html`<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>`),
+  Upload:    I(html`<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/>`),
+  Download:  I(html`<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>`),
+  Close:     I(html`<path d="M18 6L6 18M6 6l12 12"/>`),
+  Trend:     I(html`<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>`),
+  Shield:    I(html`<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>`),
+  Target:    I(html`<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>`),
+  Check:     I(html`<polyline points="20 6 9 17 4 12"/>`),
+  Settings:  I(html`<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>`),
+  Box:       I(html`<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>`),
+  Clock:     I(html`<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`),
+  Cloud:     I(html`<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>`),
+  Copy:      I(html`<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>`),
+  FileText:  I(html`<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>`),
+  Zap:       I(html`<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>`),
+  Mic:       I(html`<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>`),
+  MicOff:    I(html`<line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="22"/>`),
+  Sparkles:  I(html`<path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M19 14l.9 2.7L22 17.5l-2.1.8L19 21l-.9-2.7L16 17.5l2.1-.8z"/>`),
+  Send:      I(html`<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>`),
+  User:      I(html`<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>`),
+};
+
+/* ---------- PRIMITIVES ---------- */
+function Card({children, class:cls='', ...rest}) {
+  return html`<div class=${'bg-white rounded-xl shadow-card border border-ink-100 '+cls} ...${rest}>${children}</div>`;
+}
+function Stat({label, value, sub, tone='brand', icon}) {
+  const tones = {brand:'from-brand-50 to-brand-100 text-brand-700 ring-brand-200',emerald:'from-emerald-50 to-emerald-100 text-emerald-700 ring-emerald-200',amber:'from-amber-50 to-amber-100 text-amber-700 ring-amber-200',rose:'from-rose-50 to-rose-100 text-rose-700 ring-rose-200',violet:'from-violet-50 to-violet-100 text-violet-700 ring-violet-200'}[tone];
+  return html`
+    <${Card} class="p-5">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-xs font-medium text-ink-500 uppercase tracking-wide">${label}</div>
+          <div class="mt-2 text-3xl font-bold text-ink-900 tabular-nums">${value}</div>
+          ${sub && html`<div class="mt-1 text-xs text-ink-500">${sub}</div>`}
+        </div>
+        <div class=${'p-2.5 rounded-lg bg-gradient-to-br ring-1 '+tones}>${icon}</div>
+      </div>
+    </${Card}>`;
+}
+function Badge({children, color='ink'}) {
+  const map = {ink:'bg-ink-100 text-ink-700',brand:'bg-brand-100 text-brand-700',emerald:'bg-emerald-100 text-emerald-700',amber:'bg-amber-100 text-amber-700',rose:'bg-rose-100 text-rose-700',violet:'bg-violet-100 text-violet-700'};
+  return html`<span class=${'inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium '+(map[color]||map.ink)}>${children}</span>`;
+}
+function Button({children, variant='primary', size='md', class:cls='', ...rest}) {
+  const variants = {primary:'bg-brand-600 hover:bg-brand-700 text-white shadow-sm',ghost:'bg-transparent hover:bg-ink-100 text-ink-700',outline:'bg-white hover:bg-ink-50 text-ink-700 border border-ink-200',danger:'bg-rose-600 hover:bg-rose-700 text-white',subtle:'bg-ink-100 hover:bg-ink-200 text-ink-700',success:'bg-emerald-600 hover:bg-emerald-700 text-white'};
+  const sizes = {sm:'px-2.5 py-1.5 text-xs',md:'px-3.5 py-2 text-sm',lg:'px-4 py-2.5 text-sm'};
+  return html`<button class=${'inline-flex items-center gap-1.5 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed '+(variants[variant])+' '+(sizes[size])+' '+cls} ...${rest}>${children}</button>`;
+}
+function Input(props) {
+  return html`<input class=${'w-full px-3 py-2 text-sm bg-white border border-ink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition '+(props.class||'')} ...${props} />`;
+}
+function Textarea(props) {
+  return html`<textarea class=${'w-full px-3 py-2 text-sm bg-white border border-ink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition '+(props.class||'')} ...${props}></textarea>`;
+}
+function Select({children, ...rest}) {
+  return html`<select class=${'w-full px-3 py-2 text-sm bg-white border border-ink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent '+(rest.class||'')} ...${rest}>${children}</select>`;
+}
+function Modal({open, onClose, title, children, wide=false}) {
+  useEffect(() => { if (!open) return; const h=(e)=>{if(e.key==='Escape')onClose();}; window.addEventListener('keydown',h); return()=>window.removeEventListener('keydown',h); }, [open]);
+  if (!open) return null;
+  return html`
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-900/40 backdrop-blur-sm fade-in" onClick=${onClose}>
+      <div class=${'bg-white rounded-2xl shadow-soft border border-ink-200 w-full '+(wide?'max-w-4xl':'max-w-lg')+' max-h-[90vh] overflow-hidden flex flex-col'} onClick=${e=>e.stopPropagation()}>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-ink-100">
+          <h3 class="text-lg font-semibold text-ink-900">${title}</h3>
+          <button onClick=${onClose} class="p-1.5 rounded-lg hover:bg-ink-100 text-ink-500"><${Icon.Close} /></button>
+        </div>
+        <div class="p-6 overflow-auto">${children}</div>
+      </div>
+    </div>`;
+}
+function EmptyState({title, hint, icon}) {
+  return html`<div class="flex flex-col items-center justify-center py-16 text-center">
+    <div class="p-4 rounded-full bg-ink-100 text-ink-400 mb-4">${icon}</div>
+    <div class="text-ink-700 font-medium">${title}</div>
+    ${hint && html`<div class="text-ink-500 text-sm mt-1 max-w-md">${hint}</div>`}
+  </div>`;
+}
+function Tabs({tabs, value, onChange}) {
+  return html`<div class="flex gap-1 p-1 bg-ink-100 rounded-lg w-fit">
+    ${tabs.map(t => html`<button key=${t.key} onClick=${()=>onChange(t.key)}
+      class=${'px-3.5 py-1.5 rounded-md text-sm font-medium transition '+(value===t.key?'bg-white text-ink-900 shadow-sm':'text-ink-600 hover:text-ink-800')}>${t.label}</button>`)}
+  </div>`;
+}
+function Field({label, children, hint}) {
+  return html`<div><label class="block text-xs font-medium text-ink-600 mb-1">${label}</label>${children}${hint && html`<div class="mt-1 text-xs text-ink-400">${hint}</div>`}</div>`;
+}
+
+/* ---------- CHART ---------- */
+function ChartView({type, data, options, height=260}) {
+  const ref = useRef(null); const inst = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    if (inst.current) inst.current.destroy();
+    inst.current = new Chart(ref.current, {type, data, options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'Inter',size:11}, color:'#475569'}}},
+      scales: (type==='bar'||type==='line') ? {
+        x:{ticks:{font:{family:'Inter',size:10},color:'#64748b'}, grid:{color:'#f1f5f9'}},
+        y:{ticks:{font:{family:'Inter',size:10},color:'#64748b'}, grid:{color:'#f1f5f9'}, beginAtZero:true}
+      } : undefined, ...options
+    }});
+    return () => { if (inst.current) inst.current.destroy(); };
+  }, [type, JSON.stringify(data), JSON.stringify(options)]);
+  return html`<div style=${{height:height+'px'}}><canvas ref=${ref}></canvas></div>`;
+}
+
+/* ---------- SIDEBAR ---------- */
+const NAV_GROUPS = [
+  {title:'Visão Geral', items:[
+    {key:'dashboard', label:'Dashboard', icon: html`<${Icon.Dash}/>`},
+    {key:'evolucao',  label:'Evolução',  icon: html`<${Icon.Clock}/>`},
+    {key:'ninebox',   label:'Nine-Box',  icon: html`<${Icon.Box}/>`},
+  ]},
+  {title:'Gestão', items:[
+    {key:'colaboradores', label:'Colaboradores', icon: html`<${Icon.Users}/>`},
+    {key:'competencias',  label:'Competências',  icon: html`<${Icon.Star}/>`},
+    {key:'requisitos',    label:'Requisitos',    icon: html`<${Icon.Target}/>`},
+    {key:'avaliacoes',    label:'Avaliações',    icon: html`<${Icon.Clipboard}/>`},
+    {key:'planos',        label:'Planos',        icon: html`<${Icon.Plan}/>`},
+  ]},
+  {title:'Análise', items:[
+    {key:'matriz', label:'Matriz', icon: html`<${Icon.Grid}/>`},
+  ]},
+  {title:'Administração', items:[
+    {key:'admin', label:'Admin', icon: html`<${Icon.Settings}/>`},
+  ]},
+];
+
+function Sidebar({route, setRoute, config, currentUser, dispatch, onChangePwd, collapsed, onToggleCollapsed}) {
+  const allowed = new Set(ROLE_PAGES[currentUser.papel] || []);
+  const groups = NAV_GROUPS.map(g => ({...g, items: g.items.filter(i => allowed.has(i.key))})).filter(g => g.items.length);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const initials = currentUser.nome.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
+  const roleColor = currentUser.papel==='admin'?'violet':currentUser.papel==='coordenador'?'brand':'emerald';
+
+  return html`
+    <aside class=${'shrink-0 bg-gradient-to-b from-ink-900 to-ink-800 text-ink-100 flex flex-col no-print transition-all duration-200 '+(collapsed?'w-16':'w-64')}>
+      <div class=${'px-3 py-4 border-b border-ink-800/60 flex items-center gap-2 '+(collapsed?'justify-center':'')}>
+        <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg">
+          ${config.logo ? html`<img src=${config.logo} class="w-full h-full rounded-xl object-cover"/>` : html`<${Icon.Grid} size=${20} class="text-white"/>`}
+        </div>
+        ${!collapsed && html`
+          <div class="min-w-0 flex-1">
+            <div class="font-semibold text-white leading-tight truncate">${config.empresa}</div>
+            <div class="text-xs text-ink-400">Matriz · v2.1</div>
+          </div>
+          <button onClick=${onToggleCollapsed} class="shrink-0 p-1.5 rounded hover:bg-ink-800/70 text-ink-300" title="Recolher">«</button>`}
+      </div>
+      ${collapsed && html`
+        <button onClick=${onToggleCollapsed} class="mx-2 mt-2 py-1.5 rounded hover:bg-ink-800/70 text-ink-300 text-sm" title="Expandir">»</button>`}
+      <nav class="flex-1 p-2 space-y-3 overflow-y-auto overflow-x-hidden">
+        ${groups.map(g => html`
+          <div key=${g.title}>
+            ${!collapsed && html`<div class="px-2 pb-1 text-[10px] font-semibold text-ink-500 uppercase tracking-wider">${g.title}</div>`}
+            <div class="space-y-0.5">
+              ${g.items.map(n => html`
+                <button key=${n.key} onClick=${()=>setRoute(n.key)}
+                  title=${collapsed?n.label:''}
+                  class=${'w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition '+
+                          (route===n.key ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-300 hover:bg-ink-800/70 hover:text-white')+
+                          (collapsed ? ' justify-center' : '')}>
+                  ${n.icon}${!collapsed ? html`<span>${n.label}</span>` : ''}
+                </button>`)}
+            </div>
+          </div>`)}
+      </nav>
+      <div class="p-2 border-t border-ink-800/60 relative">
+        ${menuOpen && html`
+          <div class=${'absolute bg-white rounded-lg shadow-xl border border-ink-200 overflow-hidden z-10 '+(collapsed?'left-full bottom-0 ml-2 w-48':'bottom-full left-2 right-2 mb-2')}>
+            <button onClick=${()=>{setMenuOpen(false);onChangePwd();}} class="w-full text-left px-3 py-2 text-sm text-ink-700 hover:bg-ink-50 flex items-center gap-2"><${Icon.Settings} size=${14}/> Alterar palavra-passe</button>
+            <button onClick=${()=>{setMenuOpen(false);dispatch({type:'LOGOUT'});}} class="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2"><${Icon.Close} size=${14}/> Terminar sessão</button>
+          </div>`}
+        <button onClick=${()=>setMenuOpen(!menuOpen)} title=${collapsed?currentUser.nome:''}
+          class=${'w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-ink-800/70 transition '+(collapsed?'justify-center':'')}>
+          <div class=${'w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-white text-xs font-semibold bg-gradient-to-br '+(roleColor==='violet'?'from-violet-500 to-violet-700':roleColor==='brand'?'from-brand-500 to-brand-700':'from-emerald-500 to-emerald-700')}>${initials}</div>
+          ${!collapsed && html`
+            <div class="flex-1 min-w-0 text-left">
+              <div class="text-sm font-medium text-white truncate">${currentUser.nome}</div>
+              <div class="text-[10px] text-ink-400 uppercase tracking-wide">${PAPEIS[currentUser.papel]}</div>
+            </div>
+            <span class="text-ink-400">⋯</span>`}
+        </button>
+      </div>
+    </aside>`;
+}
+
+/* ---------- TOPBAR ---------- */
+function findHeaderRow(sheet) {
+  const ref = sheet['!ref']; if (!ref) return 0;
+  const range = XLSX.utils.decode_range(ref);
+  for (let R=range.s.r; R<=Math.min(range.e.r, range.s.r+30); R++) {
+    for (let C=range.s.c; C<=range.e.c; C++) {
+      const cell = sheet[XLSX.utils.encode_cell({r:R,c:C})];
+      if (cell && String(cell.v).toLowerCase().includes('colaborador')) return R;
+    }
+  }
+  return 0;
+}
+
+function TopBar({state, dispatch, title, subtitle}) {
+  const fileRef = useRef(null);
+  const onImport = async (e) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const data = await f.arrayBuffer();
+    const wb = XLSX.read(data);
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, {defval:null, range: findHeaderRow(sheet)});
+    const colabs = [], avals = [];
+    const comps = [...state.competencias];
+    rows.forEach((r,i) => {
+      const nome = r['Colaborador'] || r['Nome'];
+      if (!nome) return;
+      const id = i+1;
+      colabs.push({id, nome:String(nome).trim(), dep:r['Departamento']||'', funcao:r['Função']||r['Funcao']||'', nivel:r['Nível']||r['Nivel']||'Pl', site:r['SITE']||r['Site']||'', potencial:2});
+      const tec = r['Competência Técnica']||r['Competencia Tecnica'];
+      const comp = r['Competência Comportamental']||r['Competencia Comportamental'];
+      [[tec,'Técnica'],[comp,'Comportamental']].forEach(([nm,tipo]) => {
+        if (!nm) return;
+        let c = comps.find(x=>x.nome.toLowerCase().trim()===String(nm).toLowerCase().trim());
+        if (!c) { c = {id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), nome:String(nm).trim(), tipo, iso:r['ISO Relacionada']||''}; comps.push(c); }
+        avals.push({id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), colaboradorId:id, competenciaId:c.id, peso:Number(r['Peso (%)']||0), atual:Number(r['Nível Atual']||0), esperado:Number(r['Nível Esperado']||0), plano:r['Plano']||'', responsavel:r['Responsável']||'', prazo:String(r['Prazo']||''), carreira:r['Plano de Carreira']||'', dataAvaliacao:new Date().toISOString().slice(0,10)});
+      });
+    });
+    if (colabs.length) {
+      dispatch({type:'IMPORT', payload:{colaboradores:colabs, competencias:comps, avaliacoes: avals.length? avals : state.avaliacoes}});
+      alert(`Importados: ${colabs.length} colaboradores · ${comps.length} competências · ${avals.length} avaliações.`);
+    } else alert('Nenhum colaborador encontrado no ficheiro.');
+    e.target.value='';
+  };
+  const onExport = () => {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.colaboradores.map(c=>({ID:c.id,Colaborador:c.nome,Departamento:c.dep,Função:c.funcao,Nível:c.nivel,Site:c.site,Potencial:POTENCIAL_LABEL[c.potencial]}))), 'Colaboradores');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.competencias.map(c=>({ID:c.id,Competência:c.nome,Tipo:c.tipo,ISO:c.iso||''}))), 'Competências');
+    const rows = state.avaliacoes.map(a => {
+      const col = state.colaboradores.find(c=>c.id===a.colaboradorId) || {};
+      const comp = state.competencias.find(c=>c.id===a.competenciaId) || {};
+      return {Colaborador:col.nome, Departamento:col.dep, Função:col.funcao, Nível:col.nivel, Site:col.site, Competência:comp.nome, Tipo:comp.tipo, ISO:comp.iso||'', 'Peso (%)':a.peso, 'Nível Atual':a.atual, 'Nível Esperado':a.esperado, Gap:gap(a), Score:Number(score(a).toFixed(2)), Plano:a.plano||'', Responsável:a.responsavel||'', Prazo:a.prazo||'', 'Plano de Carreira':a.carreira||'', 'Data Avaliação':a.dataAvaliacao||''};
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Matriz');
+    XLSX.writeFile(wb, 'matriz_competencias.xlsx');
+  };
+  return html`
+    <header class="h-16 bg-white border-b border-ink-100 px-6 flex items-center justify-between no-print">
+      <div>
+        <h1 class="text-lg font-semibold text-ink-900">${title}</h1>
+        ${subtitle && html`<p class="text-xs text-ink-500">${subtitle}</p>`}
+      </div>
+      <div class="flex items-center gap-2">
+        <input ref=${fileRef} type="file" accept=".xlsx,.xls" class="hidden" onChange=${onImport}/>
+        <${Button} variant="outline" size="sm" onClick=${()=>fileRef.current.click()}><${Icon.Upload} size=${16}/> Importar</${Button}>
+        <${Button} variant="outline" size="sm" onClick=${onExport}><${Icon.Download} size=${16}/> Excel</${Button}>
+      </div>
+    </header>`;
+}
+
+/* ---------- PDF EXPORT ---------- */
+async function exportDashboardPDF(state) {
+  const el = document.getElementById('printable-dashboard');
+  if (!el) return alert('Dashboard não disponível.');
+  const canvas = await html2canvas(el, {scale:2, backgroundColor:'#f8fafc', logging:false});
+  const imgData = canvas.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p','mm','a4');
+  const pageW = 210, pageH = 297, margin = 15;
+  // Header
+  pdf.setFillColor(37,99,235); pdf.rect(0,0,pageW,25,'F');
+  pdf.setTextColor(255,255,255); pdf.setFont('helvetica','bold'); pdf.setFontSize(16);
+  pdf.text(state.config.empresa, margin, 12);
+  pdf.setFont('helvetica','normal'); pdf.setFontSize(9);
+  pdf.text('Relatório Executivo · Matriz de Competências', margin, 18);
+  pdf.text(new Date().toLocaleDateString('pt-PT',{year:'numeric',month:'long',day:'2-digit'}), pageW-margin, 18, {align:'right'});
+  // KPIs inline
+  pdf.setTextColor(15,23,42); pdf.setFontSize(11); pdf.setFont('helvetica','bold');
+  pdf.text('Indicadores principais', margin, 35);
+  const total = state.colaboradores.length;
+  const avaliados = uniq(state.avaliacoes.map(a=>a.colaboradorId)).length;
+  const gm = state.avaliacoes.length ? (state.avaliacoes.reduce((s,a)=>s+gap(a),0)/state.avaliacoes.length) : 0;
+  const sm = state.avaliacoes.length ? (state.avaliacoes.reduce((s,a)=>s+score(a),0)/state.avaliacoes.length) : 0;
+  pdf.setFont('helvetica','normal'); pdf.setFontSize(9);
+  const kpis = [['Colaboradores',total],['Cobertura',Math.round((avaliados/Math.max(1,total))*100)+'%'],['Gap médio',gm.toFixed(2)],['Score médio',sm.toFixed(1)]];
+  kpis.forEach((k,i) => {
+    const x = margin + i*45;
+    pdf.setDrawColor(226,232,240); pdf.roundedRect(x, 38, 42, 15, 2, 2, 'S');
+    pdf.setFontSize(7); pdf.setTextColor(100,116,139); pdf.text(k[0].toUpperCase(), x+3, 43);
+    pdf.setFontSize(14); pdf.setTextColor(15,23,42); pdf.setFont('helvetica','bold'); pdf.text(String(k[1]), x+3, 50);
+    pdf.setFont('helvetica','normal');
+  });
+  // Image
+  const imgW = pageW - 2*margin; const imgH = (canvas.height * imgW) / canvas.width;
+  pdf.addImage(imgData, 'PNG', margin, 58, imgW, Math.min(imgH, pageH-70));
+  // Footer
+  pdf.setFontSize(8); pdf.setTextColor(100,116,139);
+  pdf.text('Gerado pela app Matriz de Competências · Página 1', margin, pageH-8);
+  pdf.save(`relatorio-matriz-${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+/* ---------- PAGE · DASHBOARD ---------- */
+function Dashboard({state}) {
+  const { colaboradores, competencias, avaliacoes } = state;
+  const total = colaboradores.length;
+  const avaliados = uniq(avaliacoes.map(a=>a.colaboradorId)).length;
+  const cobertura = total ? Math.round((avaliados/total)*100) : 0;
+  const gapMedio = avaliacoes.length ? (avaliacoes.reduce((s,a)=>s+gap(a),0)/avaliacoes.length) : 0;
+  const scoreMedio = avaliacoes.length ? (avaliacoes.reduce((s,a)=>s+score(a),0)/avaliacoes.length) : 0;
+  const gapsByDep = {};
+  avaliacoes.forEach(a => { const c = colaboradores.find(x=>x.id===a.colaboradorId); if (!c) return; if (!gapsByDep[c.dep]) gapsByDep[c.dep]={sum:0,n:0}; gapsByDep[c.dep].sum+=gap(a); gapsByDep[c.dep].n++; });
+  const depLabels = Object.keys(gapsByDep);
+  const depValues = depLabels.map(k => +(gapsByDep[k].sum/gapsByDep[k].n).toFixed(2));
+  const siteCount = {};
+  colaboradores.forEach(c => siteCount[c.site||'—'] = (siteCount[c.site||'—']||0)+1);
+  const topGaps = [...avaliacoes].sort((a,b)=>gap(b)-gap(a)).slice(0,10).map(a=>{
+    const c = colaboradores.find(x=>x.id===a.colaboradorId)||{}; const k = competencias.find(x=>x.id===a.competenciaId)||{};
+    return {colab:c.nome, dep:c.dep, comp:k.nome, gap:gap(a), atual:a.atual, esperado:a.esperado};
+  });
+
+  return html`
+    <div class="p-6 space-y-6 fade-in">
+      <div class="flex items-center justify-between no-print">
+        <div class="text-sm text-ink-500">Última atualização: ${new Date().toLocaleString('pt-PT')}</div>
+        <${Button} variant="primary" onClick=${()=>exportDashboardPDF(state)}>
+          <${Icon.FileText} size=${16}/> Exportar PDF Executivo
+        </${Button}>
+      </div>
+
+      <div id="printable-dashboard" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <${Stat} label="Colaboradores" value=${total} sub=${`${uniq(colaboradores.map(c=>c.dep)).length} departamentos`} tone="brand" icon=${html`<${Icon.Users}/>`}/>
+          <${Stat} label="Cobertura da matriz" value=${cobertura+'%'} sub=${`${avaliados} de ${total} avaliados`} tone="emerald" icon=${html`<${Icon.Target}/>`}/>
+          <${Stat} label="Gap médio" value=${gapMedio.toFixed(2)} sub="Escala 0–4" tone="amber" icon=${html`<${Icon.Trend}/>`}/>
+          <${Stat} label="Score médio" value=${scoreMedio.toFixed(1)} sub="Peso × Nível / 5" tone="violet" icon=${html`<${Icon.Star}/>`}/>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <${Card} class="lg:col-span-2 p-5">
+            <h3 class="font-semibold text-ink-900">Gap médio por departamento</h3>
+            <p class="text-xs text-ink-500 mb-3">Áreas com maior necessidade de desenvolvimento</p>
+            ${depLabels.length ? html`
+              <${ChartView} type="bar" height=${280} data=${{labels:depLabels, datasets:[{label:'Gap médio', data:depValues, backgroundColor:'#2563eb', borderRadius:6, maxBarThickness:34}]}} options=${{plugins:{legend:{display:false}}}}/>
+            ` : html`<${EmptyState} icon=${html`<${Icon.Trend}/>`} title="Sem avaliações" hint="Cria avaliações para veres o gráfico."/>`}
+          </${Card}>
+          <${Card} class="p-5">
+            <h3 class="font-semibold text-ink-900 mb-3">Distribuição por Site</h3>
+            <${ChartView} type="doughnut" height=${280} data=${{labels:Object.keys(siteCount), datasets:[{data:Object.values(siteCount), backgroundColor:['#2563eb','#0ea5e9','#8b5cf6','#f59e0b','#10b981']}]}} options=${{cutout:'60%',plugins:{legend:{position:'bottom'}}}}/>
+          </${Card}>
+        </div>
+
+        <${Card} class="p-5">
+          <h3 class="font-semibold text-ink-900">Top 10 gaps críticos</h3>
+          <p class="text-xs text-ink-500 mb-4">Ordenados pela maior diferença entre esperado e atual</p>
+          ${topGaps.length ? html`
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead><tr class="text-left text-xs font-medium text-ink-500 uppercase tracking-wide border-b border-ink-100">
+                  <th class="py-2 pr-4">Colaborador</th><th class="py-2 pr-4">Departamento</th><th class="py-2 pr-4">Competência</th>
+                  <th class="py-2 pr-4 text-center">Atual</th><th class="py-2 pr-4 text-center">Esperado</th><th class="py-2 pr-4 text-center">Gap</th>
+                </tr></thead>
+                <tbody>
+                  ${topGaps.map((r,i)=>html`
+                    <tr key=${i} class="border-b border-ink-50">
+                      <td class="py-2.5 pr-4 font-medium text-ink-800">${r.colab}</td>
+                      <td class="py-2.5 pr-4 text-ink-600">${r.dep}</td>
+                      <td class="py-2.5 pr-4 text-ink-600">${r.comp}</td>
+                      <td class="py-2.5 pr-4 text-center tabular-nums">${r.atual}</td>
+                      <td class="py-2.5 pr-4 text-center tabular-nums">${r.esperado}</td>
+                      <td class="py-2.5 pr-4 text-center">
+                        <span class=${'inline-flex items-center justify-center w-8 h-8 rounded-full text-white text-xs font-semibold '+gapClass(r.gap)}>${r.gap}</span>
+                      </td>
+                    </tr>`)}
+                </tbody>
+              </table>
+            </div>
+          ` : html`<${EmptyState} icon=${html`<${Icon.Clipboard}/>`} title="Sem avaliações" hint="Cria avaliações na secção 'Avaliações'."/>`}
+        </${Card}>
+      </div>
+    </div>`;
+}
+
+/* ---------- PAGE · COLABORADORES ---------- */
+function ColabDetalhe({colab, state, dispatch, onClose, onEdit}) {
+  const avs = state.avaliacoes.filter(a => a.colaboradorId === colab.id);
+  const compById = useMemo(() => Object.fromEntries(state.competencias.map(c=>[c.id,c])), [state.competencias]);
+  const gapMed = avs.length ? (avs.reduce((s,a)=>s+gap(a),0)/avs.length) : 0;
+  const criticos = avs.filter(a => gap(a) >= 3).length;
+  const scoreMed = avs.length ? (avs.reduce((s,a)=>s+score(a),0)/avs.length) : 0;
+  const initials = colab.nome.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
+  const nivelColor = colab.nivel==='Sr'?'violet':colab.nivel==='Pl'?'brand':'emerald';
+
+  return html`
+    <div class="space-y-5">
+      <div class="flex items-start gap-4 pb-4 border-b border-ink-100">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 text-white text-xl font-bold flex items-center justify-center shadow-md">${initials}</div>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-lg font-semibold text-ink-900">${colab.nome}</h3>
+          <div class="text-sm text-ink-600 mt-0.5">${colab.funcao}</div>
+          <div class="flex flex-wrap items-center gap-2 mt-2">
+            <${Badge} color=${nivelColor}>${NIVEIS_LABEL[colab.nivel]||colab.nivel}</${Badge}>
+            <${Badge} color="ink">${colab.dep}</${Badge}>
+            <${Badge} color="ink">${colab.site}</${Badge}>
+            <${Badge} color=${colab.potencial===3?'emerald':colab.potencial===2?'amber':'ink'}>Potencial: ${POTENCIAL_LABEL[colab.potencial||2]}</${Badge}>
+          </div>
+        </div>
+        <${Button} variant="outline" size="sm" onClick=${()=>{onEdit(colab); onClose();}}><${Icon.Edit} size=${14}/> Editar</${Button}>
+      </div>
+
+      <div class="grid grid-cols-4 gap-3">
+        <div class="p-3 rounded-lg bg-brand-50 border border-brand-100">
+          <div class="text-[10px] uppercase tracking-wide text-brand-700 font-medium">Avaliações</div>
+          <div class="text-2xl font-bold text-brand-900 tabular-nums mt-1">${avs.length}</div>
+        </div>
+        <div class="p-3 rounded-lg bg-amber-50 border border-amber-100">
+          <div class="text-[10px] uppercase tracking-wide text-amber-700 font-medium">Gap médio</div>
+          <div class="text-2xl font-bold text-amber-900 tabular-nums mt-1">${gapMed.toFixed(1)}</div>
+        </div>
+        <div class="p-3 rounded-lg bg-rose-50 border border-rose-100">
+          <div class="text-[10px] uppercase tracking-wide text-rose-700 font-medium">Gaps críticos</div>
+          <div class="text-2xl font-bold text-rose-900 tabular-nums mt-1">${criticos}</div>
+        </div>
+        <div class="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
+          <div class="text-[10px] uppercase tracking-wide text-emerald-700 font-medium">Score médio</div>
+          <div class="text-2xl font-bold text-emerald-900 tabular-nums mt-1">${scoreMed.toFixed(1)}</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="text-sm font-semibold text-ink-800">Avaliações (${avs.length})</h4>
+        </div>
+        ${avs.length === 0 ? html`
+          <div class="p-6 rounded-lg border border-dashed border-ink-200 text-center text-sm text-ink-500">
+            Sem avaliações registadas. Usa o Assistente IA ou vai à página Avaliações para adicionar.
+          </div>
+        ` : html`
+          <div class="overflow-x-auto border border-ink-100 rounded-lg">
+            <table class="w-full text-sm">
+              <thead><tr class="text-left text-xs font-medium text-ink-500 uppercase tracking-wide border-b border-ink-100 bg-ink-50/50">
+                <th class="px-3 py-2">Competência</th><th class="px-3 py-2">Tipo</th>
+                <th class="px-3 py-2 text-center">Peso%</th><th class="px-3 py-2 text-center">Atual</th>
+                <th class="px-3 py-2 text-center">Esper.</th><th class="px-3 py-2 text-center">Gap</th>
+                <th class="px-3 py-2">Plano</th><th class="px-3 py-2">Prazo</th>
+              </tr></thead>
+              <tbody>
+                ${avs.map(a => { const c = compById[a.competenciaId]; const g = gap(a); return html`
+                  <tr key=${a.id} class="border-b border-ink-50 last:border-0">
+                    <td class="px-3 py-2 font-medium text-ink-800">${c?.nome||'—'}</td>
+                    <td class="px-3 py-2 text-ink-600">${c?.tipo||'—'}</td>
+                    <td class="px-3 py-2 text-center tabular-nums">${a.peso||0}</td>
+                    <td class="px-3 py-2 text-center tabular-nums font-semibold">${a.atual||0}</td>
+                    <td class="px-3 py-2 text-center tabular-nums">${a.esperado||0}</td>
+                    <td class="px-3 py-2 text-center"><span class=${'inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-full text-white text-xs font-semibold '+gapClass(g)}>${g}</span></td>
+                    <td class="px-3 py-2 text-ink-600 max-w-xs truncate" title=${a.plano||''}>${a.plano||'—'}</td>
+                    <td class="px-3 py-2 text-ink-600 tabular-nums">${a.prazo||'—'}</td>
+                  </tr>`; })}
+              </tbody>
+            </table>
+          </div>`}
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <${Button} variant="outline" onClick=${onClose}>Fechar</${Button}>
+      </div>
+    </div>`;
+}
+
+function ColabForm({value, onSave, onClose, state}) {
+  const [f, setF] = useState(value || {nome:'',dep:'',funcao:'',nivel:'Pl',site:'',potencial:2});
+  const deps  = uniq(state.colaboradores.map(c=>c.dep).filter(Boolean)).sort();
+  const sites = uniq(state.colaboradores.map(c=>c.site).filter(Boolean)).sort();
+  return html`
+    <div class="space-y-4">
+      <${Field} label="Nome completo"><${Input} value=${f.nome} onInput=${e=>setF({...f,nome:e.target.value})}/></${Field}>
+      <div class="grid grid-cols-2 gap-3">
+        <${Field} label="Departamento"><${Input} list="deps" value=${f.dep} onInput=${e=>setF({...f,dep:e.target.value})}/>
+          <datalist id="deps">${deps.map(d=>html`<option key=${d} value=${d}/>`)}</datalist></${Field}>
+        <${Field} label="Função"><${Input} value=${f.funcao} onInput=${e=>setF({...f,funcao:e.target.value})}/></${Field}>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <${Field} label="Nível"><${Select} value=${f.nivel} onChange=${e=>setF({...f,nivel:e.target.value})}>
+          ${NIVEIS.map(n=>html`<option key=${n} value=${n}>${NIVEIS_LABEL[n]}</option>`)}</${Select}></${Field}>
+        <${Field} label="Site"><${Input} list="sites" value=${f.site} onInput=${e=>setF({...f,site:e.target.value})}/>
+          <datalist id="sites">${sites.map(s=>html`<option key=${s} value=${s}/>`)}</datalist></${Field}>
+        <${Field} label="Potencial"><${Select} value=${f.potencial} onChange=${e=>setF({...f,potencial:Number(e.target.value)})}>
+          <option value=${1}>Baixo</option><option value=${2}>Médio</option><option value=${3}>Alto</option></${Select}></${Field}>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <${Button} variant="outline" onClick=${onClose}>Cancelar</${Button}>
+        <${Button} onClick=${()=>{if(!f.nome){alert('Nome obrigatório');return;} onSave(f); onClose();}}>Guardar</${Button}>
+      </div>
+    </div>`;
+}
+
+function Colaboradores({state, dispatch}) {
+  const [q, setQ] = useState('');
+  const [filterDep, setFilterDep] = useState('');
+  const [filterSite, setFilterSite] = useState('');
+  const [filterNivel, setFilterNivel] = useState('');
+  const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [viewing, setViewing] = useState(null);
+  const deps  = uniq(state.colaboradores.map(c=>c.dep).filter(Boolean)).sort();
+  const sites = uniq(state.colaboradores.map(c=>c.site).filter(Boolean)).sort();
+  const filtered = state.colaboradores.filter(c => {
+    if (q && !(c.nome+' '+c.funcao+' '+c.dep).toLowerCase().includes(q.toLowerCase())) return false;
+    if (filterDep && c.dep!==filterDep) return false;
+    if (filterSite && c.site!==filterSite) return false;
+    if (filterNivel && c.nivel!==filterNivel) return false;
+    return true;
+  }).sort(by('nome'));
+  const avalByColab = useMemo(() => { const m={}; state.avaliacoes.forEach(a => { (m[a.colaboradorId] = m[a.colaboradorId]||[]).push(a); }); return m; }, [state.avaliacoes]);
+
+  return html`
+    <div class="p-6 space-y-4 fade-in">
+      <${Card} class="p-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="relative flex-1 min-w-[220px]">
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400"><${Icon.Search} size=${16}/></div>
+            <${Input} class="pl-9" placeholder="Pesquisar por nome, função ou departamento…" value=${q} onInput=${e=>setQ(e.target.value)}/>
+          </div>
+          <${Select} value=${filterDep} onChange=${e=>setFilterDep(e.target.value)} class="w-48">
+            <option value="">Todos departamentos</option>${deps.map(d=>html`<option key=${d} value=${d}>${d}</option>`)}</${Select}>
+          <${Select} value=${filterSite} onChange=${e=>setFilterSite(e.target.value)} class="w-36">
+            <option value="">Todos sites</option>${sites.map(s=>html`<option key=${s} value=${s}>${s}</option>`)}</${Select}>
+          <${Select} value=${filterNivel} onChange=${e=>setFilterNivel(e.target.value)} class="w-32">
+            <option value="">Todos níveis</option>${NIVEIS.map(n=>html`<option key=${n} value=${n}>${NIVEIS_LABEL[n]}</option>`)}</${Select}>
+          <${Button} onClick=${()=>setAdding(true)}><${Icon.Plus} size=${16}/> Novo</${Button}>
+        </div>
+        <div class="mt-3 text-xs text-ink-500">${filtered.length} de ${state.colaboradores.length} colaboradores</div>
+      </${Card}>
+
+      <${Card}>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="text-left text-xs font-medium text-ink-500 uppercase tracking-wide border-b border-ink-100 bg-ink-50/50">
+              <th class="px-4 py-3">Colaborador</th><th class="px-4 py-3">Departamento</th><th class="px-4 py-3">Função</th>
+              <th class="px-4 py-3">Nível</th><th class="px-4 py-3">Site</th><th class="px-4 py-3">Potencial</th>
+              <th class="px-4 py-3 text-center">Aval.</th><th class="px-4 py-3 text-center">Gap</th><th class="px-4 py-3 text-right">Ações</th>
+            </tr></thead>
+            <tbody>
+              ${filtered.map(c => {
+                const avs = avalByColab[c.id]||[];
+                const gm = avs.length ? (avs.reduce((s,a)=>s+gap(a),0)/avs.length) : null;
+                const initials = c.nome.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
+                return html`
+                <tr key=${c.id} class="border-b border-ink-50 hover:bg-ink-50/60">
+                  <td class="px-4 py-3">
+                    <button onClick=${()=>setViewing(c)} class="flex items-center gap-3 text-left group">
+                      <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white text-xs font-semibold flex items-center justify-center">${initials}</div>
+                      <div class="font-medium text-ink-800 group-hover:text-brand-600 group-hover:underline">${c.nome}</div>
+                    </button>
+                  </td>
+                  <td class="px-4 py-3 text-ink-600">${c.dep}</td>
+                  <td class="px-4 py-3 text-ink-600">${c.funcao}</td>
+                  <td class="px-4 py-3"><${Badge} color=${c.nivel==='Sr'?'violet':c.nivel==='Pl'?'brand':'emerald'}>${NIVEIS_LABEL[c.nivel]||c.nivel}</${Badge}></td>
+                  <td class="px-4 py-3 text-ink-600">${c.site}</td>
+                  <td class="px-4 py-3"><${Badge} color=${c.potencial===3?'emerald':c.potencial===2?'amber':'ink'}>${POTENCIAL_LABEL[c.potencial||2]}</${Badge}></td>
+                  <td class="px-4 py-3 text-center tabular-nums text-ink-700">${avs.length}</td>
+                  <td class="px-4 py-3 text-center">
+                    ${gm===null ? html`<span class="text-ink-400">—</span>` : html`<span class=${'inline-flex items-center justify-center min-w-[32px] h-7 px-2 rounded-full text-white text-xs font-semibold '+gapClass(Math.round(gm))}>${gm.toFixed(1)}</span>`}
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    <button onClick=${()=>setEditing(c)} class="p-1.5 rounded hover:bg-ink-100 text-ink-500"><${Icon.Edit} size=${16}/></button>
+                    <button onClick=${()=>{if(confirm('Remover '+c.nome+'?')) dispatch({type:'DEL_COLAB',payload:c.id});}} class="p-1.5 rounded hover:bg-rose-50 text-rose-500"><${Icon.Trash} size=${16}/></button>
+                  </td>
+                </tr>`;
+              })}
+            </tbody>
+          </table>
+          ${!filtered.length && html`<${EmptyState} icon=${html`<${Icon.Users}/>`} title="Sem resultados" hint="Ajusta os filtros."/>`}
+        </div>
+      </${Card}>
+
+      <${Modal} open=${adding} onClose=${()=>setAdding(false)} title="Novo colaborador">
+        <${ColabForm} state=${state} onSave=${f=>dispatch({type:'ADD_COLAB',payload:f})} onClose=${()=>setAdding(false)}/>
+      </${Modal}>
+      <${Modal} open=${!!editing} onClose=${()=>setEditing(null)} title="Editar colaborador">
+        ${editing && html`<${ColabForm} value=${editing} state=${state} onSave=${f=>dispatch({type:'UPD_COLAB',payload:{...f,id:editing.id}})} onClose=${()=>setEditing(null)}/>`}
+      </${Modal}>
+      <${Modal} open=${!!viewing} onClose=${()=>setViewing(null)} title="Ficha do colaborador" wide=${true}>
+        ${viewing && html`<${ColabDetalhe} colab=${viewing} state=${state} dispatch=${dispatch} onClose=${()=>setViewing(null)} onEdit=${(c)=>setEditing(c)}/>`}
+      </${Modal}>
+    </div>`;
+}
+
+/* ---------- PAGE · COMPETÊNCIAS ---------- */
+function CompForm({value, onSave, onClose}) {
+  const [f, setF] = useState(value || {nome:'',tipo:'Técnica',iso:''});
+  return html`
+    <div class="space-y-4">
+      <${Field} label="Nome da competência"><${Input} value=${f.nome} onInput=${e=>setF({...f,nome:e.target.value})}/></${Field}>
+      <div class="grid grid-cols-2 gap-3">
+        <${Field} label="Tipo"><${Select} value=${f.tipo} onChange=${e=>setF({...f,tipo:e.target.value})}><option>Técnica</option><option>Comportamental</option></${Select}></${Field}>
+        <${Field} label="ISO Relacionada"><${Input} value=${f.iso} placeholder="ex: ISO 9001" onInput=${e=>setF({...f,iso:e.target.value})}/></${Field}>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <${Button} variant="outline" onClick=${onClose}>Cancelar</${Button}>
+        <${Button} onClick=${()=>{if(!f.nome){alert('Nome obrigatório');return;} onSave(f); onClose();}}>Guardar</${Button}>
+      </div>
+    </div>`;
+}
+
+function Competencias({state, dispatch}) {
+  const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const tecn = state.competencias.filter(c=>c.tipo==='Técnica');
+  const comp = state.competencias.filter(c=>c.tipo==='Comportamental');
+  const countByComp = useMemo(() => { const m={}; state.avaliacoes.forEach(a => m[a.competenciaId]=(m[a.competenciaId]||0)+1); return m; }, [state.avaliacoes]);
+
+  const Group = ({title, items, color}) => html`
+    <${Card} class="p-5">
+      <h3 class="font-semibold text-ink-900 mb-4">${title} <span class="ml-2 text-xs text-ink-500">${items.length}</span></h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        ${items.map(c => html`
+          <div key=${c.id} class="flex items-center justify-between p-3 rounded-lg border border-ink-100 hover:border-ink-200 hover:shadow-card transition">
+            <div class="flex items-center gap-3">
+              <div class=${'w-10 h-10 rounded-lg flex items-center justify-center '+(color==='brand'?'bg-brand-100 text-brand-700':'bg-violet-100 text-violet-700')}><${Icon.Star} size=${18}/></div>
+              <div><div class="font-medium text-ink-800">${c.nome}</div>
+                <div class="text-xs text-ink-500 flex items-center gap-2 mt-0.5">
+                  ${c.iso && html`<${Badge} color="emerald">${c.iso}</${Badge}>`}<span>${countByComp[c.id]||0} avaliações</span>
+                </div></div>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onClick=${()=>setEditing(c)} class="p-1.5 rounded hover:bg-ink-100 text-ink-500"><${Icon.Edit} size=${16}/></button>
+              <button onClick=${()=>{if(confirm('Remover "'+c.nome+'"?')) dispatch({type:'DEL_COMP',payload:c.id});}} class="p-1.5 rounded hover:bg-rose-50 text-rose-500"><${Icon.Trash} size=${16}/></button>
+            </div>
+          </div>`)}
+      </div>
+    </${Card}>`;
+
+  return html`
+    <div class="p-6 space-y-4 fade-in">
+      <div class="flex items-center justify-between">
+        <div><h2 class="text-xl font-semibold text-ink-900">Catálogo de Competências</h2>
+          <p class="text-sm text-ink-500">${state.competencias.length} no total · ${tecn.length} técnicas · ${comp.length} comportamentais</p></div>
+        <${Button} onClick=${()=>setAdding(true)}><${Icon.Plus} size=${16}/> Nova</${Button}>
+      </div>
+      <${Group} title="Competências Técnicas" items=${tecn} color="brand"/>
+      <${Group} title="Competências Comportamentais" items=${comp} color="violet"/>
+      <${Modal} open=${adding} onClose=${()=>setAdding(false)} title="Nova competência">
+        <${CompForm} onSave=${f=>dispatch({type:'ADD_COMP',payload:f})} onClose=${()=>setAdding(false)}/>
+      </${Modal}>
+      <${Modal} open=${!!editing} onClose=${()=>setEditing(null)} title="Editar competência">
+        ${editing && html`<${CompForm} value=${editing} onSave=${f=>dispatch({type:'UPD_COMP',payload:{...f,id:editing.id}})} onClose=${()=>setEditing(null)}/>`}
+      </${Modal}>
+    </div>`;
+}
+
+/* ---------- PAGE · REQUISITOS ---------- */
+function ReqForm({value, onSave, onClose, state}) {
+  const funcoes = uniq(state.colaboradores.map(c=>c.funcao).filter(Boolean)).sort();
+  const [f, setF] = useState(value || {funcao:'',nivel:'Pl',competenciaId:'',esperado:3,peso:10});
+  return html`
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <${Field} label="Função"><${Input} list="funcs" value=${f.funcao} onInput=${e=>setF({...f,funcao:e.target.value})}/>
+          <datalist id="funcs">${funcoes.map(x=>html`<option key=${x} value=${x}/>`)}</datalist></${Field}>
+        <${Field} label="Nível"><${Select} value=${f.nivel} onChange=${e=>setF({...f,nivel:e.target.value})}>
+          ${NIVEIS.map(n=>html`<option key=${n} value=${n}>${NIVEIS_LABEL[n]}</option>`)}</${Select}></${Field}>
+      </div>
+      <${Field} label="Competência"><${Select} value=${f.competenciaId} onChange=${e=>setF({...f,competenciaId:e.target.value})}>
+        <option value="">Selecionar…</option>
+        ${state.competencias.map(c=>html`<option key=${c.id} value=${c.id}>${c.nome} · ${c.tipo}</option>`)}</${Select}></${Field}>
+      <div class="grid grid-cols-2 gap-3">
+        <${Field} label="Nível esperado (0–5)"><${Input} type="number" min="0" max="5" value=${f.esperado} onInput=${e=>setF({...f,esperado:Number(e.target.value)})}/></${Field}>
+        <${Field} label="Peso (%)"><${Input} type="number" min="0" max="100" value=${f.peso} onInput=${e=>setF({...f,peso:Number(e.target.value)})}/></${Field}>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <${Button} variant="outline" onClick=${onClose}>Cancelar</${Button}>
+        <${Button} onClick=${()=>{if(!f.funcao||!f.competenciaId){alert('Função e competência obrigatórias');return;} onSave(f); onClose();}}>Guardar</${Button}>
+      </div>
+    </div>`;
+}
+
+function Requisitos({state, dispatch}) {
+  const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const rows = [...state.requisitos].map(r => ({...r, comp: (state.competencias.find(c=>c.id===r.competenciaId)||{}).nome || '—'})).sort((a,b)=>(a.funcao+a.nivel).localeCompare(b.funcao+b.nivel));
+
+  const applyAll = () => {
+    if (!confirm('Criar avaliações em branco para todos os colaboradores com base nos requisitos da sua função+nível? Isto não sobrescreve avaliações existentes.')) return;
+    dispatch({type:'APPLY_REQ'});
+    setTimeout(()=>alert('Requisitos aplicados. Verifica em "Avaliações".'), 100);
+  };
+
+  return html`
+    <div class="p-6 space-y-4 fade-in">
+      <${Card} class="p-5 bg-gradient-to-br from-brand-50 to-white border-brand-100">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 class="font-semibold text-ink-900 flex items-center gap-2"><${Icon.Zap} size=${18}/> Automatizar avaliações</h3>
+            <p class="text-sm text-ink-600 mt-1">Cria avaliações em branco para todos os colaboradores com base no nível esperado e peso definidos por função + nível.</p>
+          </div>
+          <${Button} variant="primary" onClick=${applyAll}>Aplicar requisitos</${Button}>
+        </div>
+      </${Card}>
+
+      <${Card}>
+        <div class="p-4 flex items-center justify-between">
+          <div><h3 class="font-semibold text-ink-900">Requisitos por Função</h3>
+            <p class="text-xs text-ink-500">${rows.length} requisitos definidos</p></div>
+          <${Button} onClick=${()=>setAdding(true)}><${Icon.Plus} size=${16}/> Novo</${Button}>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="text-left text-xs font-medium text-ink-500 uppercase tracking-wide border-b border-ink-100 bg-ink-50/50">
+              <th class="px-4 py-3">Função</th><th class="px-4 py-3">Nível</th><th class="px-4 py-3">Competência</th>
+              <th class="px-4 py-3 text-center">Esperado</th><th class="px-4 py-3 text-center">Peso</th><th class="px-4 py-3 text-right">Ações</th>
+            </tr></thead>
+            <tbody>
+              ${rows.map(r => html`
+                <tr key=${r.id} class="border-b border-ink-50 hover:bg-ink-50/60">
+                  <td class="px-4 py-3 font-medium text-ink-800">${r.funcao}</td>
+                  <td class="px-4 py-3"><${Badge} color="brand">${NIVEIS_LABEL[r.nivel]}</${Badge}></td>
+                  <td class="px-4 py-3 text-ink-600">${r.comp}</td>
+                  <td class="px-4 py-3 text-center tabular-nums">${r.esperado}</td>
+                  <td class="px-4 py-3 text-center tabular-nums">${r.peso}%</td>
+                  <td class="px-4 py-3 text-right">
+                    <button onClick=${()=>setEditing(r)} class="p-1.5 rounded hover:bg-ink-100 text-ink-500"><${Icon.Edit} size=${16}/></button>
+                    <button onClick=${()=>{if(confirm('Remover requisito?')) dispatch({type:'DEL_REQ',payload:r.id});}} class="p-1.5 rounded hover:bg-rose-50 text-rose-500"><${Icon.Trash} size=${16}/></button>
+                  </td>
+                </tr>`)}
+            </tbody>
+          </table>
+          ${!rows.length && html`<${EmptyState} icon=${html`<${Icon.Target}/>`} title="Sem requisitos" hint="Define o nível esperado por função+nível para automatizar avaliações."/>`}
+        </div>
+      </${Card}>
+
+      <${Modal} open=${adding} onClose=${()=>setAdding(false)} title="Novo requisito" wide=${true}>
+        <${ReqForm} state=${state} onSave=${f=>dispatch({type:'ADD_REQ',payload:f})} onClose=${()=>setAdding(false)}/>
+      </${Modal}>
+      <${Modal} open=${!!editing} onClose=${()=>setEditing(null)} title="Editar requisito" wide=${true}>
+        ${editing && html`<${ReqForm} state=${state} value=${editing} onSave=${f=>dispatch({type:'UPD_REQ',payload:{...f,id:editing.id}})} onClose=${()=>setEditing(null)}/>`}
+      </${Modal}>
+    </div>`;
+}
+
+/* ---------- PAGE · MATRIZ ---------- */
+function Matriz({state}) {
+  const [filterDep, setFilterDep] = useState('');
+  const [filterSite, setFilterSite] = useState('');
+  const [filterTipo, setFilterTipo] = useState('');
+  const [showOnly, setShowOnly] = useState('com');
+  const deps  = uniq(state.colaboradores.map(c=>c.dep).filter(Boolean)).sort();
+  const sites = uniq(state.colaboradores.map(c=>c.site).filter(Boolean)).sort();
+  const colabs = state.colaboradores.filter(c => (!filterDep||c.dep===filterDep) && (!filterSite||c.site===filterSite));
+  const comps = state.competencias.filter(c => !filterTipo || c.tipo===filterTipo);
+  const byPair = {}; state.avaliacoes.forEach(a => { byPair[a.colaboradorId+'_'+a.competenciaId] = a; });
+  const filteredColabs = showOnly==='com' ? colabs.filter(c => state.avaliacoes.some(a=>a.colaboradorId===c.id)) : colabs;
+  const headerStyle = {writingMode:'vertical-rl', transform:'rotate(180deg)', whiteSpace:'nowrap', maxHeight:'140px'};
+
+  return html`
+    <div class="p-6 space-y-4 fade-in">
+      <${Card} class="p-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <${Select} value=${filterDep} onChange=${e=>setFilterDep(e.target.value)} class="w-48">
+            <option value="">Todos departamentos</option>${deps.map(d=>html`<option key=${d} value=${d}>${d}</option>`)}</${Select}>
+          <${Select} value=${filterSite} onChange=${e=>setFilterSite(e.target.value)} class="w-36">
+            <option value="">Todos sites</option>${sites.map(s=>html`<option key=${s} value=${s}>${s}</option>`)}</${Select}>
+          <${Select} value=${filterTipo} onChange=${e=>setFilterTipo(e.target.value)} class="w-52">
+            <option value="">Todas as competências</option><option value="Técnica">Apenas técnicas</option><option value="Comportamental">Apenas comportamentais</option></${Select}>
+          <${Select} value=${showOnly} onChange=${e=>setShowOnly(e.target.value)} class="w-52">
+            <option value="com">Só colaboradores avaliados</option><option value="all">Todos os colaboradores</option></${Select}>
+          <div class="ml-auto flex items-center gap-3 text-xs text-ink-500">
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-500"></span>0</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-lime-500"></span>1</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-amber-500"></span>2</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-orange-500"></span>3</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-rose-600"></span>4+</span>
+          </div>
+        </div>
+      </${Card}>
+
+      <${Card} class="p-0 overflow-hidden">
+        <div class="overflow-auto max-h-[70vh]">
+          <table class="min-w-full text-xs">
+            <thead class="sticky top-0 z-10">
+              <tr class="bg-white border-b border-ink-100">
+                <th class="sticky left-0 z-20 bg-white px-4 py-3 text-left font-semibold text-ink-700 border-r border-ink-100 min-w-[220px]">Colaborador</th>
+                ${comps.map(c => html`
+                  <th key=${c.id} class="px-1 py-3 text-center font-medium text-ink-600 min-w-[40px]">
+                    <div class="inline-block" style=${headerStyle}>${c.nome}</div>
+                  </th>`)}
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredColabs.map(c => html`
+                <tr key=${c.id} class="border-b border-ink-50 hover:bg-ink-50/50">
+                  <td class="sticky left-0 bg-white hover:bg-ink-50/50 px-4 py-2 text-ink-800 font-medium border-r border-ink-100">
+                    <div class="truncate max-w-[200px]" title=${c.nome}>${c.nome}</div>
+                    <div class="text-xs text-ink-500 truncate">${c.dep}</div>
+                  </td>
+                  ${comps.map(k => {
+                    const a = byPair[c.id+'_'+k.id];
+                    if (!a) return html`<td key=${k.id} class="p-1"><div class="w-7 h-7 rounded border border-dashed border-ink-200 mx-auto"></div></td>`;
+                    const g = gap(a);
+                    return html`<td key=${k.id} class="p-1">
+                      <div class=${'heatcell w-7 h-7 mx-auto rounded text-white text-[10px] font-bold flex items-center justify-center cursor-help '+gapClass(g)}
+                           title=${c.nome+' · '+k.nome+' · Atual: '+a.atual+' · Esperado: '+a.esperado+' · Gap: '+g}>${a.atual}</div>
+                    </td>`;
+                  })}
+                </tr>`)}
+            </tbody>
+          </table>
+          ${!filteredColabs.length && html`<div class="p-10"><${EmptyState} icon=${html`<${Icon.Grid}/>`} title="Matriz vazia" hint="Sem dados para os filtros selecionados."/></div>`}
+        </div>
+      </${Card}>
+    </div>`;
+}
+
+/* ---------- PAGE · AVALIAÇÕES ---------- */
+function AvalForm({value, onSave, onClose, state}) {
+  const [f, setF] = useState(value || {colaboradorId:'',competenciaId:'',peso:10,atual:3,esperado:5,plano:'',responsavel:'',prazo:'',carreira:'',dataAvaliacao:new Date().toISOString().slice(0,10)});
+  // Auto-preencher esperado+peso com base no requisito (colab.funcao + colab.nivel + competenciaId)
+  useEffect(() => {
+    if (!f.colaboradorId || !f.competenciaId) return;
+    const c = state.colaboradores.find(x=>x.id===Number(f.colaboradorId));
+    if (!c) return;
+    const r = state.requisitos.find(x=>x.funcao===c.funcao && x.nivel===c.nivel && x.competenciaId===f.competenciaId);
+    if (r && (!value || (f.esperado===5 && f.peso===10))) setF(prev => ({...prev, esperado:r.esperado, peso:r.peso}));
+  }, [f.colaboradorId, f.competenciaId]);
+
+  const sugerido = (() => {
+    if (!f.colaboradorId || !f.competenciaId) return null;
+    const c = state.colaboradores.find(x=>x.id===Number(f.colaboradorId));
+    if (!c) return null;
+    return state.requisitos.find(x=>x.funcao===c.funcao && x.nivel===c.nivel && x.competenciaId===f.competenciaId);
+  })();
+
+  return html`
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <${Field} label="Colaborador"><${Select} value=${f.colaboradorId} onChange=${e=>setF({...f,colaboradorId:Number(e.target.value)})}>
+          <option value="">Selecionar…</option>
+          ${[...state.colaboradores].sort(by('nome')).map(c=>html`<option key=${c.id} value=${c.id}>${c.nome} (${c.dep})</option>`)}</${Select}></${Field}>
+        <${Field} label="Competência"><${Select} value=${f.competenciaId} onChange=${e=>setF({...f,competenciaId:e.target.value})}>
+          <option value="">Selecionar…</option>
+          ${state.competencias.map(c=>html`<option key=${c.id} value=${c.id}>${c.nome} · ${c.tipo}</option>`)}</${Select}></${Field}>
+      </div>
+      ${sugerido && html`
+        <div class="p-3 rounded-lg bg-brand-50 border border-brand-100 text-sm text-brand-700 flex items-center gap-2">
+          <${Icon.Zap} size=${16}/>
+          Requisito desta função+nível: esperado ${sugerido.esperado}, peso ${sugerido.peso}% (preenchido automaticamente)
+        </div>`}
+      <div class="grid grid-cols-4 gap-3">
+        <${Field} label="Peso (%)"><${Input} type="number" min="0" max="100" value=${f.peso} onInput=${e=>setF({...f,peso:Number(e.target.value)})}/></${Field}>
+        <${Field} label="Nível Atual"><${Input} type="number" min="0" max="5" value=${f.atual} onInput=${e=>setF({...f,atual:Number(e.target.value)})}/></${Field}>
+        <${Field} label="Nível Esperado"><${Input} type="number" min="0" max="5" value=${f.esperado} onInput=${e=>setF({...f,esperado:Number(e.target.value)})}/></${Field}>
+        <${Field} label="Data"><${Input} type="date" value=${f.dataAvaliacao} onInput=${e=>setF({...f,dataAvaliacao:e.target.value})}/></${Field}>
+      </div>
+      <${Field} label="Plano de desenvolvimento"><${Input} value=${f.plano} placeholder="ex: Formação ISO 9001" onInput=${e=>setF({...f,plano:e.target.value})}/></${Field}>
+      <div class="grid grid-cols-3 gap-3">
+        <${Field} label="Responsável"><${Input} value=${f.responsavel} onInput=${e=>setF({...f,responsavel:e.target.value})}/></${Field}>
+        <${Field} label="Prazo"><${Input} type="month" value=${f.prazo} onInput=${e=>setF({...f,prazo:e.target.value})}/></${Field}>
+        <${Field} label="Plano de carreira"><${Input} value=${f.carreira} onInput=${e=>setF({...f,carreira:e.target.value})}/></${Field}>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <${Button} variant="outline" onClick=${onClose}>Cancelar</${Button}>
+        <${Button} onClick=${()=>{if(!f.colaboradorId||!f.competenciaId){alert('Colaborador e competência obrigatórios');return;} onSave(f); onClose();}}>Guardar</${Button}>
+      </div>
+    </div>`;
+}
+
+function Avaliacoes({state, dispatch}) {
+  const [q, setQ] = useState('');
+  const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const rows = state.avaliacoes.map(a => {
+    const c = state.colaboradores.find(x=>x.id===a.colaboradorId) || {};
+    const k = state.competencias.find(x=>x.id===a.competenciaId) || {};
+    return {...a, colabNome:c.nome||'—', dep:c.dep||'', compNome:k.nome||'—', tipo:k.tipo||''};
+  }).filter(r => !q || (r.colabNome+' '+r.compNome+' '+r.dep).toLowerCase().includes(q.toLowerCase()));
+
+  return html`
+    <div class="p-6 space-y-4 fade-in">
+      <${Card} class="p-4">
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400"><${Icon.Search} size=${16}/></div>
+            <${Input} class="pl-9" placeholder="Pesquisar…" value=${q} onInput=${e=>setQ(e.target.value)}/>
+          </div>
+          <${Button} variant="subtle" onClick=${()=>{if(confirm('Criar snapshot da matriz atual? Útil para histórico.')) {const d=prompt('Descrição do snapshot:','Snapshot '+new Date().toLocaleDateString('pt-PT')); if(d) dispatch({type:'ADD_SNAP',payload:d});}}}><${Icon.Copy} size=${16}/> Snapshot</${Button}>
+          <${Button} onClick=${()=>setAdding(true)}><${Icon.Plus} size=${16}/> Nova avaliação</${Button}>
+        </div>
+      </${Card}>
+
+      <${Card}>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="text-left text-xs font-medium text-ink-500 uppercase tracking-wide border-b border-ink-100 bg-ink-50/50">
+              <th class="px-4 py-3">Colaborador</th><th class="px-4 py-3">Competência</th>
+              <th class="px-4 py-3 text-center">Peso</th><th class="px-4 py-3 text-center">Atual</th>
+              <th class="px-4 py-3 text-center">Esperado</th><th class="px-4 py-3 text-center">Gap</th>
+              <th class="px-4 py-3 text-center">Score</th><th class="px-4 py-3">Plano</th>
+              <th class="px-4 py-3">Prazo</th><th class="px-4 py-3 text-right">Ações</th>
+            </tr></thead>
+            <tbody>
+              ${rows.map(r => html`
+                <tr key=${r.id} class="border-b border-ink-50 hover:bg-ink-50/60">
+                  <td class="px-4 py-3"><div class="font-medium text-ink-800">${r.colabNome}</div><div class="text-xs text-ink-500">${r.dep}</div></td>
+                  <td class="px-4 py-3"><div class="text-ink-700">${r.compNome}</div><div class="text-xs text-ink-500">${r.tipo}</div></td>
+                  <td class="px-4 py-3 text-center tabular-nums">${r.peso}%</td>
+                  <td class="px-4 py-3 text-center tabular-nums">${r.atual}</td>
+                  <td class="px-4 py-3 text-center tabular-nums">${r.esperado}</td>
+                  <td class="px-4 py-3 text-center"><span class=${'inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-semibold '+gapClass(gap(r))}>${gap(r)}</span></td>
+                  <td class="px-4 py-3 text-center tabular-nums">${score(r).toFixed(1)}</td>
+                  <td class="px-4 py-3 text-ink-600 truncate max-w-[200px]" title=${r.plano}>${r.plano||'—'}</td>
+                  <td class="px-4 py-3 text-ink-600">${r.prazo||'—'}</td>
+                  <td class="px-4 py-3 text-right">
+                    <button onClick=${()=>setEditing(r)} class="p-1.5 rounded hover:bg-ink-100 text-ink-500"><${Icon.Edit} size=${16}/></button>
+                    <button onClick=${()=>{if(confirm('Remover avaliação?')) dispatch({type:'DEL_AVAL',payload:r.id});}} class="p-1.5 rounded hover:bg-rose-50 text-rose-500"><${Icon.Trash} size=${16}/></button>
+                  </td>
+                </tr>`)}
+            </tbody>
+          </table>
+          ${!rows.length && html`<${EmptyState} icon=${html`<${Icon.Clipboard}/>`} title="Sem avaliações" hint="Cria a primeira."/>`}
+        </div>
+      </${Card}>
+
+      <${Modal} open=${adding} onClose=${()=>setAdding(false)} title="Nova avaliação" wide=${true}>
+        <${AvalForm} state=${state} onSave=${f=>dispatch({type:'ADD_AVAL',payload:f})} onClose=${()=>setAdding(false)}/>
+      </${Modal}>
+      <${Modal} open=${!!editing} onClose=${()=>setEditing(null)} title="Editar avaliação" wide=${true}>
+        ${editing && html`<${AvalForm} state=${state} value=${editing} onSave=${f=>dispatch({type:'UPD_AVAL',payload:{...f,id:editing.id}})} onClose=${()=>setEditing(null)}/>`}
+      </${Modal}>
+    </div>`;
+}
+
+/* ---------- PAGE · PLANOS ---------- */
+function Planos({state}) {
+  const rows = state.avaliacoes.filter(a => a.plano && gap(a)>0).map(a => {
+    const c = state.colaboradores.find(x=>x.id===a.colaboradorId) || {};
+    const k = state.competencias.find(x=>x.id===a.competenciaId) || {};
+    return {...a, colabNome:c.nome, dep:c.dep, compNome:k.nome};
+  }).sort((a,b)=>(a.prazo||'z').localeCompare(b.prazo||'z'));
+  const now = new Date();
+  const isLate = (p) => p && new Date(p) < now;
+  const isSoon = (p) => { if (!p) return false; const d=new Date(p); const diff=(d-now)/86400000; return diff>=0 && diff<=60; };
+
+  return html`
+    <div class="p-6 space-y-4 fade-in">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <${Stat} label="Planos ativos" value=${rows.length} tone="brand" icon=${html`<${Icon.Plan}/>`}/>
+        <${Stat} label="Prazo em risco (≤ 60 dias)" value=${rows.filter(r=>isSoon(r.prazo)).length} tone="amber" icon=${html`<${Icon.Trend}/>`}/>
+        <${Stat} label="Prazo ultrapassado" value=${rows.filter(r=>isLate(r.prazo)).length} tone="rose" icon=${html`<${Icon.Shield}/>`}/>
+      </div>
+      <${Card}>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="text-left text-xs font-medium text-ink-500 uppercase tracking-wide border-b border-ink-100 bg-ink-50/50">
+              <th class="px-4 py-3">Colaborador</th><th class="px-4 py-3">Competência</th>
+              <th class="px-4 py-3">Plano</th><th class="px-4 py-3">Responsável</th>
+              <th class="px-4 py-3">Prazo</th><th class="px-4 py-3">Carreira</th>
+              <th class="px-4 py-3 text-center">Gap</th><th class="px-4 py-3 text-center">Estado</th>
+            </tr></thead>
+            <tbody>
+              ${rows.map(r => {
+                const late = isLate(r.prazo); const soon = !late && isSoon(r.prazo);
+                return html`
+                <tr key=${r.id} class="border-b border-ink-50 hover:bg-ink-50/60">
+                  <td class="px-4 py-3 font-medium text-ink-800">${r.colabNome}<div class="text-xs text-ink-500 font-normal">${r.dep}</div></td>
+                  <td class="px-4 py-3 text-ink-700">${r.compNome}</td>
+                  <td class="px-4 py-3 text-ink-600">${r.plano}</td>
+                  <td class="px-4 py-3 text-ink-600">${r.responsavel||'—'}</td>
+                  <td class="px-4 py-3 text-ink-600">${r.prazo||'—'}</td>
+                  <td class="px-4 py-3 text-ink-600">${r.carreira||'—'}</td>
+                  <td class="px-4 py-3 text-center"><span class=${'inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-semibold '+gapClass(gap(r))}>${gap(r)}</span></td>
+                  <td class="px-4 py-3 text-center">
+                    ${late ? html`<${Badge} color="rose">Em atraso</${Badge}>` : soon ? html`<${Badge} color="amber">Próximo</${Badge}>` : html`<${Badge} color="emerald">No prazo</${Badge}>`}
+                  </td>
+                </tr>`;
+              })}
+            </tbody>
+          </table>
+          ${!rows.length && html`<${EmptyState} icon=${html`<${Icon.Plan}/>`} title="Sem planos ativos" hint="Cria avaliações com gap > 0 e plano preenchido."/>`}
+        </div>
+      </${Card}>
+    </div>`;
+}
+
+/* ---------- PAGE · NINE-BOX ---------- */
+function NineBox({state}) {
+  const [filterDep, setFilterDep] = useState('');
+  const deps = uniq(state.colaboradores.map(c=>c.dep).filter(Boolean)).sort();
+
+  const perfBucket = (colab) => {
+    const avs = state.avaliacoes.filter(a=>a.colaboradorId===colab.id);
+    if (!avs.length) return null;
+    const pct = avs.reduce((s,a)=>s+(a.atual/5),0)/avs.length;
+    return pct<0.4 ? 1 : pct<0.7 ? 2 : 3;
+  };
+
+  const colabs = state.colaboradores.filter(c => !filterDep || c.dep===filterDep);
+  const grid = {}; // key "perf_pot" → [colabs]
+  for (let p=1;p<=3;p++) for (let po=1;po<=3;po++) grid[p+'_'+po] = [];
+  colabs.forEach(c => { const p = perfBucket(c); const po = c.potencial||2; if (p) grid[p+'_'+po].push(c); });
+
+  const boxInfo = {
+    '3_3':{label:'Estrela', color:'bg-emerald-500',desc:'Alto desempenho e alto potencial'},
+    '3_2':{label:'Alto performer', color:'bg-emerald-400',desc:'Excelente desempenho, potencial médio'},
+    '3_1':{label:'Especialista', color:'bg-brand-400',desc:'Desempenho alto, pouco potencial para subir'},
+    '2_3':{label:'Rising star', color:'bg-brand-500',desc:'Desempenho médio, alto potencial'},
+    '2_2':{label:'Core performer', color:'bg-brand-400',desc:'Consistente — base da equipa'},
+    '2_1':{label:'Profissional sólido', color:'bg-ink-400',desc:'Cumpre objetivos no atual papel'},
+    '1_3':{label:'Enigma', color:'bg-amber-400',desc:'Baixo desempenho, alto potencial — investigar'},
+    '1_2':{label:'Inconsistente', color:'bg-amber-500',desc:'Exige apoio e acompanhamento'},
+    '1_1':{label:'Em risco', color:'bg-rose-500',desc:'Requer plano de ação urgente'},
+  };
+
+  return html`
+    <div class="p-6 space-y-4 fade-in">
+      <${Card} class="p-4 flex items-center gap-3">
+        <div class="text-sm text-ink-600 mr-2">Filtrar:</div>
+        <${Select} value=${filterDep} onChange=${e=>setFilterDep(e.target.value)} class="w-64">
+          <option value="">Todos departamentos</option>${deps.map(d=>html`<option key=${d} value=${d}>${d}</option>`)}</${Select}>
+        <div class="ml-auto text-xs text-ink-500">
+          <span class="font-medium">Performance</span> = média do nível atual. <span class="font-medium">Potencial</span> definido por colaborador.
+        </div>
+      </${Card}>
+
+      <${Card} class="p-5">
+        <div class="flex">
+          <div class="flex flex-col justify-between items-center py-8 pr-3 text-xs font-medium text-ink-500 uppercase tracking-wider" style=${{writingMode:'vertical-rl', transform:'rotate(180deg)'}}>
+            <span>Alto</span><span>Médio</span><span>Baixo</span>
+          </div>
+          <div class="flex-1">
+            <div class="text-center text-xs font-semibold text-ink-600 uppercase tracking-wider mb-2">↑ Performance</div>
+            <div class="grid grid-cols-3 gap-2">
+              ${[3,2,1].flatMap(p => [1,2,3].map(po => {
+                const key = p+'_'+po;
+                const info = boxInfo[key];
+                const items = grid[key];
+                return html`
+                <div key=${key} class="relative rounded-xl border-2 border-ink-100 p-3 min-h-[160px] bg-ink-50/30 hover:bg-white transition">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class=${'inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-md text-white '+info.color}>${info.label}</div>
+                    <span class="text-xs font-semibold text-ink-700 tabular-nums">${items.length}</span>
+                  </div>
+                  <div class="text-[10px] text-ink-500 mb-2">${info.desc}</div>
+                  <div class="space-y-1 max-h-[110px] overflow-auto">
+                    ${items.slice(0,6).map(c => html`
+                      <div key=${c.id} class="text-xs px-2 py-1 rounded bg-white border border-ink-100 truncate" title=${c.nome+' · '+c.funcao}>${c.nome}</div>`)}
+                    ${items.length>6 && html`<div class="text-[10px] text-ink-500 px-2">+${items.length-6} mais…</div>`}
+                  </div>
+                </div>`;
+              }))}
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-3 text-xs font-medium text-ink-500 uppercase tracking-wider text-center">
+              <div>Baixo</div><div>Médio</div><div>Alto</div>
+            </div>
+            <div class="text-center text-xs font-semibold text-ink-600 uppercase tracking-wider mt-1">Potencial →</div>
+          </div>
+        </div>
+      </${Card}>
+    </div>`;
+}
+
+/* ---------- PAGE · EVOLUÇÃO ---------- */
+function Evolucao({state, dispatch}) {
+  const snaps = [...state.snapshots].sort((a,b)=>a.data.localeCompare(b.data));
+  const current = {id:'_current', data:new Date().toISOString(), descricao:'Atual', avaliacoes: state.avaliacoes};
+  const serie = [...snaps, current];
+  const labels = serie.map(s => s.id==='_current'?'Atual':new Date(s.data).toLocaleDateString('pt-PT'));
+  const gapsMed = serie.map(s => s.avaliacoes.length ? s.avaliacoes.reduce((a,x)=>a+gap(x),0)/s.avaliacoes.length : 0);
+  const scoresMed = serie.map(s => s.avaliacoes.length ? s.avaliacoes.reduce((a,x)=>a+score(x),0)/s.avaliacoes.length : 0);
+
+  return html`
+    <div class="p-6 space-y-4 fade-in">
+      <${Card} class="p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div><h3 class="font-semibold text-ink-900">Evolução da Matriz</h3>
+            <p class="text-xs text-ink-500">Compara snapshots históricos com o estado atual</p></div>
+          <${Button} variant="primary" onClick=${()=>{const d=prompt('Descrição do snapshot:','Snapshot '+new Date().toLocaleDateString('pt-PT')); if(d) dispatch({type:'ADD_SNAP',payload:d});}}><${Icon.Copy} size=${16}/> Criar snapshot</${Button}>
+        </div>
+        ${serie.length>1 ? html`
+          <${ChartView} type="line" height=${300} data=${{
+            labels,
+            datasets:[
+              {label:'Gap médio', data:gapsMed, borderColor:'#dc2626', backgroundColor:'rgba(220,38,38,0.1)', tension:0.3, fill:true},
+              {label:'Score médio', data:scoresMed, borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,0.1)', tension:0.3, fill:true, yAxisID:'y1'}
+            ]
+          }} options=${{scales:{y:{position:'left',beginAtZero:true},y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false}}}}}/>
+        ` : html`<${EmptyState} icon=${html`<${Icon.Clock}/>`} title="Sem histórico" hint="Cria snapshots periódicos (ex: trimestrais) para ver a evolução ao longo do tempo."/>`}
+      </${Card}>
+
+      <${Card}>
+        <div class="px-5 py-4 border-b border-ink-100"><h3 class="font-semibold text-ink-900">Snapshots</h3></div>
+        <div class="divide-y divide-ink-100">
+          ${snaps.length ? snaps.map(s => html`
+            <div key=${s.id} class="px-5 py-3 flex items-center justify-between">
+              <div>
+                <div class="font-medium text-ink-800">${s.descricao}</div>
+                <div class="text-xs text-ink-500">${new Date(s.data).toLocaleString('pt-PT')} · ${s.avaliacoes.length} avaliações</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <${Badge} color="brand">Gap méd. ${(s.avaliacoes.reduce((a,x)=>a+gap(x),0)/Math.max(1,s.avaliacoes.length)).toFixed(2)}</${Badge}>
+                <button onClick=${()=>{if(confirm('Remover snapshot?')) dispatch({type:'DEL_SNAP',payload:s.id});}} class="p-1.5 rounded hover:bg-rose-50 text-rose-500"><${Icon.Trash} size=${16}/></button>
+              </div>
+            </div>`) : html`<div class="p-10"><${EmptyState} icon=${html`<${Icon.Clock}/>`} title="Ainda sem snapshots" hint="Cria um snapshot para começares a ter histórico."/></div>`}
+        </div>
+      </${Card}>
+    </div>`;
+}
+
+/* ---------- PAGE · ADMIN ---------- */
+function AdminConfig({state, dispatch}) {
+  const [f, setF] = useState(state.config);
+  const save = () => { dispatch({type:'UPD_CFG', payload:f}); alert('Configurações guardadas.'); };
+  const onLogo = (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setF({...f, logo: reader.result});
+    reader.readAsDataURL(file);
+  };
+  return html`
+    <${Card} class="p-5">
+      <h3 class="font-semibold text-ink-900 mb-4">Identidade da Organização</h3>
+      <div class="space-y-4 max-w-2xl">
+        <${Field} label="Nome da empresa"><${Input} value=${f.empresa} onInput=${e=>setF({...f,empresa:e.target.value})}/></${Field}>
+        <${Field} label="Logo (imagem)" hint="Usado na barra lateral e relatórios PDF">
+          <input type="file" accept="image/*" onChange=${onLogo} class="text-sm"/>
+          ${f.logo && html`<div class="mt-2 flex items-center gap-3"><img src=${f.logo} class="w-12 h-12 rounded-lg object-cover border border-ink-200"/><${Button} size="sm" variant="ghost" onClick=${()=>setF({...f,logo:''})}>Remover</${Button}></div>`}
+        </${Field}>
+        <${Field} label="Cor primária"><div class="flex gap-2">
+          <input type="color" value=${f.corPrimaria} onInput=${e=>setF({...f,corPrimaria:e.target.value})} class="h-10 w-20 rounded-lg border border-ink-200 cursor-pointer"/>
+          <${Input} value=${f.corPrimaria} onInput=${e=>setF({...f,corPrimaria:e.target.value})}/>
+        </div></${Field}>
+        <${Button} onClick=${save}>Guardar</${Button}>
+      </div>
+    </${Card}>`;
+}
+
+function AdminUsers({state, dispatch}) {
+  const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const UserForm = ({value, onSave, onClose}) => {
+    const [f, setF] = useState(value || {nome:'',email:'',papel:'colab',ativo:true});
+    return html`
+      <div class="space-y-4">
+        <${Field} label="Nome"><${Input} value=${f.nome} onInput=${e=>setF({...f,nome:e.target.value})}/></${Field}>
+        <${Field} label="Email"><${Input} type="email" value=${f.email} onInput=${e=>setF({...f,email:e.target.value})}/></${Field}>
+        <div class="grid grid-cols-2 gap-3">
+          <${Field} label="Papel"><${Select} value=${f.papel} onChange=${e=>setF({...f,papel:e.target.value})}>
+            ${Object.entries(PAPEIS).map(([k,v])=>html`<option key=${k} value=${k}>${v}</option>`)}</${Select}></${Field}>
+          <${Field} label="Estado"><${Select} value=${String(f.ativo)} onChange=${e=>setF({...f,ativo:e.target.value==='true'})}>
+            <option value="true">Ativo</option><option value="false">Inativo</option></${Select}></${Field}>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <${Button} variant="outline" onClick=${onClose}>Cancelar</${Button}>
+          <${Button} onClick=${()=>{if(!f.nome||!f.email){alert('Nome e email obrigatórios');return;} onSave(f); onClose();}}>Guardar</${Button}>
+        </div>
+      </div>`;
+  };
+  return html`
+    <${Card}>
+      <div class="p-4 flex items-center justify-between">
+        <div><h3 class="font-semibold text-ink-900">Utilizadores</h3>
+          <p class="text-xs text-ink-500">${state.users.length} utilizadores</p></div>
+        <${Button} onClick=${()=>setAdding(true)}><${Icon.Plus} size=${16}/> Novo</${Button}>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="text-left text-xs font-medium text-ink-500 uppercase tracking-wide border-b border-ink-100 bg-ink-50/50">
+            <th class="px-4 py-3">Nome</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Papel</th>
+            <th class="px-4 py-3">Estado</th><th class="px-4 py-3 text-right">Ações</th>
+          </tr></thead>
+          <tbody>
+            ${state.users.map(u => html`
+              <tr key=${u.id} class="border-b border-ink-50 hover:bg-ink-50/60">
+                <td class="px-4 py-3 font-medium text-ink-800">${u.nome}</td>
+                <td class="px-4 py-3 text-ink-600">${u.email}</td>
+                <td class="px-4 py-3"><${Badge} color=${u.papel==='admin'?'violet':u.papel==='gestor'?'brand':'ink'}>${PAPEIS[u.papel]}</${Badge}></td>
+                <td class="px-4 py-3"><${Badge} color=${u.ativo?'emerald':'rose'}>${u.ativo?'Ativo':'Inativo'}</${Badge}></td>
+                <td class="px-4 py-3 text-right">
+                  <button onClick=${()=>setEditing(u)} class="p-1.5 rounded hover:bg-ink-100 text-ink-500"><${Icon.Edit} size=${16}/></button>
+                  <button onClick=${()=>{if(confirm('Remover?')) dispatch({type:'DEL_USER',payload:u.id});}} class="p-1.5 rounded hover:bg-rose-50 text-rose-500"><${Icon.Trash} size=${16}/></button>
+                </td>
+              </tr>`)}
+          </tbody>
+        </table>
+      </div>
+      <${Modal} open=${adding} onClose=${()=>setAdding(false)} title="Novo utilizador">
+        <${UserForm} onSave=${f=>dispatch({type:'ADD_USER',payload:f})} onClose=${()=>setAdding(false)}/>
+      </${Modal}>
+      <${Modal} open=${!!editing} onClose=${()=>setEditing(null)} title="Editar utilizador">
+        ${editing && html`<${UserForm} value=${editing} onSave=${f=>dispatch({type:'UPD_USER',payload:{...f,id:editing.id}})} onClose=${()=>setEditing(null)}/>`}
+      </${Modal}>
+    </${Card}>`;
+}
+
+function AdminBackup({state, dispatch}) {
+  const fileRef = useRef(null);
+  const download = () => {
+    const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `matriz-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+  };
+  const upload = async (e) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const txt = await f.text();
+    try {
+      const data = JSON.parse(txt);
+      if (!data.colaboradores) throw new Error('Ficheiro inválido');
+      if (confirm('Substituir todos os dados atuais pelo backup? Esta ação não pode ser desfeita.')) {
+        dispatch({type:'LOAD', payload:data});
+        alert('Backup restaurado.');
+      }
+    } catch(err) { alert('Ficheiro inválido: '+err.message); }
+    e.target.value = '';
+  };
+  return html`
+    <${Card} class="p-5 space-y-4">
+      <h3 class="font-semibold text-ink-900">Backup e Restauro</h3>
+      <p class="text-sm text-ink-600">Exporta todo o estado da aplicação como JSON (colaboradores, competências, avaliações, requisitos, snapshots, utilizadores e configurações).</p>
+      <div class="flex gap-2">
+        <${Button} onClick=${download}><${Icon.Download} size=${16}/> Descarregar backup</${Button}>
+        <input ref=${fileRef} type="file" accept=".json" class="hidden" onChange=${upload}/>
+        <${Button} variant="outline" onClick=${()=>fileRef.current.click()}><${Icon.Upload} size=${16}/> Restaurar de JSON</${Button}>
+      </div>
+      <div class="border-t border-ink-100 pt-4">
+        <h4 class="font-semibold text-ink-900 mb-2">Estatísticas dos dados</h4>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+          <div class="p-3 bg-ink-50 rounded-lg"><div class="text-xs text-ink-500">Colaboradores</div><div class="text-xl font-semibold">${state.colaboradores.length}</div></div>
+          <div class="p-3 bg-ink-50 rounded-lg"><div class="text-xs text-ink-500">Competências</div><div class="text-xl font-semibold">${state.competencias.length}</div></div>
+          <div class="p-3 bg-ink-50 rounded-lg"><div class="text-xs text-ink-500">Avaliações</div><div class="text-xl font-semibold">${state.avaliacoes.length}</div></div>
+          <div class="p-3 bg-ink-50 rounded-lg"><div class="text-xs text-ink-500">Requisitos</div><div class="text-xl font-semibold">${state.requisitos.length}</div></div>
+          <div class="p-3 bg-ink-50 rounded-lg"><div class="text-xs text-ink-500">Snapshots</div><div class="text-xl font-semibold">${state.snapshots.length}</div></div>
+          <div class="p-3 bg-ink-50 rounded-lg"><div class="text-xs text-ink-500">Utilizadores</div><div class="text-xl font-semibold">${state.users.length}</div></div>
+        </div>
+      </div>
+    </${Card}>`;
+}
+
+const SQL_SUPABASE = `-- Schema SQL para Supabase (cole no SQL Editor)
+create table if not exists colaboradores (id int primary key, nome text, dep text, funcao text, nivel text, site text, potencial int);
+create table if not exists competencias (id text primary key, nome text, tipo text, iso text);
+create table if not exists avaliacoes (id text primary key, colaborador_id int, competencia_id text, peso int, atual int, esperado int, plano text, responsavel text, prazo text, carreira text, data_avaliacao date);
+create table if not exists requisitos (id text primary key, funcao text, nivel text, competencia_id text, esperado int, peso int);
+alter table colaboradores enable row level security;
+alter table competencias enable row level security;
+alter table avaliacoes enable row level security;
+alter table requisitos enable row level security;
+-- Política simples (permitir tudo a utilizadores autenticados):
+create policy "auth" on colaboradores for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "auth" on competencias for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "auth" on avaliacoes  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "auth" on requisitos  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');`;
+
+function AdminSupabase({state, dispatch}) {
+  const [f, setF] = useState({url:state.config.supabaseUrl, key:state.config.supabaseKey});
+  const [status, setStatus] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const save = () => { dispatch({type:'UPD_CFG', payload:{supabaseUrl:f.url, supabaseKey:f.key}}); setStatus('Configuração guardada.'); };
+  const test = async () => {
+    if (!f.url || !f.key) return setStatus('Preenche URL e chave.');
+    setBusy(true); setStatus('A testar ligação…');
+    try {
+      const sb = window.supabase.createClient(f.url, f.key);
+      const { error } = await sb.from('colaboradores').select('id').limit(1);
+      if (error) throw error;
+      setStatus('✓ Ligação Supabase OK.');
+      dispatch({type:'UPD_CFG', payload:{supabaseUrl:f.url, supabaseKey:f.key, cloudHabilitado:true}});
+    } catch(e) { setStatus('✗ Erro: '+e.message); }
+    setBusy(false);
+  };
+  const sync = async () => {
+    if (!state.config.cloudHabilitado) return alert('Testa a ligação primeiro.');
+    setBusy(true); setStatus('A sincronizar…');
+    try {
+      const sb = window.supabase.createClient(f.url, f.key);
+      await sb.from('colaboradores').upsert(state.colaboradores);
+      await sb.from('competencias').upsert(state.competencias);
+      await sb.from('requisitos').upsert(state.requisitos.map(r=>({...r, competencia_id:r.competenciaId, competenciaId:undefined})));
+      await sb.from('avaliacoes').upsert(state.avaliacoes.map(a=>({...a, colaborador_id:a.colaboradorId, competencia_id:a.competenciaId, data_avaliacao:a.dataAvaliacao, colaboradorId:undefined, competenciaId:undefined, dataAvaliacao:undefined})));
+      setStatus('✓ Sincronização concluída.');
+    } catch(e) { setStatus('✗ Erro: '+e.message); }
+    setBusy(false);
+  };
+  const copySQL = () => { navigator.clipboard.writeText(SQL_SUPABASE); setStatus('SQL copiado para o clipboard.'); };
+
+  return html`
+    <${Card} class="p-5 space-y-5">
+      <div>
+        <h3 class="font-semibold text-ink-900 flex items-center gap-2"><${Icon.Cloud} size=${18}/> Integração Supabase</h3>
+        <p class="text-sm text-ink-600 mt-1">Liga a app a uma base de dados Supabase para multi-utilizador e acesso partilhado. Os dados continuam a funcionar localmente mesmo sem cloud.</p>
+      </div>
+      <div class="space-y-3 max-w-2xl">
+        <${Field} label="Supabase URL" hint="Ex: https://xxx.supabase.co">
+          <${Input} value=${f.url} onInput=${e=>setF({...f,url:e.target.value})} placeholder="https://xxx.supabase.co"/></${Field}>
+        <${Field} label="Anon Key" hint="Chave pública (anon public key)">
+          <${Input} type="password" value=${f.key} onInput=${e=>setF({...f,key:e.target.value})}/></${Field}>
+        <div class="flex gap-2">
+          <${Button} onClick=${save}>Guardar</${Button}>
+          <${Button} variant="outline" onClick=${test} disabled=${busy}>Testar ligação</${Button}>
+          <${Button} variant="success" onClick=${sync} disabled=${busy||!state.config.cloudHabilitado}>Sincronizar agora</${Button}>
+        </div>
+        ${status && html`<div class=${'p-3 rounded-lg text-sm '+(status.startsWith('✓')?'bg-emerald-50 text-emerald-700':status.startsWith('✗')?'bg-rose-50 text-rose-700':'bg-ink-50 text-ink-700')}>${status}</div>`}
+      </div>
+      <div class="border-t border-ink-100 pt-4">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="font-semibold text-ink-900">SQL para criar as tabelas</h4>
+          <${Button} size="sm" variant="outline" onClick=${copySQL}><${Icon.Copy} size=${14}/> Copiar</${Button}>
+        </div>
+        <p class="text-xs text-ink-500 mb-2">Cria um projeto em supabase.com, abre o SQL Editor e cola este script:</p>
+        <pre class="p-3 bg-ink-900 text-ink-100 text-xs rounded-lg overflow-auto max-h-[240px]">${SQL_SUPABASE}</pre>
+      </div>
+    </${Card}>`;
+}
+
+function AdminSistema({state, dispatch}) {
+  const [logStatus, setLogStatus] = useState('');
+  return html`
+    <${Card} class="p-5 space-y-4">
+      <h3 class="font-semibold text-ink-900">Sistema</h3>
+      <div class="space-y-3 text-sm">
+        <div class="flex items-center justify-between p-3 bg-ink-50 rounded-lg">
+          <div><div class="font-medium text-ink-800">Versão da aplicação</div>
+            <div class="text-xs text-ink-500">Matriz de Competências v2.0 · SPA auto-contido</div></div>
+          <${Badge} color="brand">v2.0</${Badge}>
+        </div>
+        <div class="flex items-center justify-between p-3 bg-ink-50 rounded-lg">
+          <div><div class="font-medium text-ink-800">Armazenamento</div>
+            <div class="text-xs text-ink-500">localStorage do browser · ${Math.round(new Blob([JSON.stringify(state)]).size/1024)} KB</div></div>
+          <${Badge} color=${state.config.cloudHabilitado?'emerald':'ink'}>${state.config.cloudHabilitado?'Cloud ativa':'Local'}</${Badge}>
+        </div>
+      </div>
+      <div class="border-t border-ink-100 pt-4 space-y-3">
+        <h4 class="font-semibold text-ink-900">Ações perigosas</h4>
+        <${Button} variant="danger" onClick=${()=>{if(confirm('REPOR tudo para dados iniciais? Esta ação apaga todas as alterações.')) {dispatch({type:'RESET'}); setLogStatus('Dados repostos.');}}}>Repor dados iniciais</${Button}>
+        <${Button} variant="outline" onClick=${()=>{if(confirm('Limpar TODOS os dados (sem repor seed)?')) {localStorage.removeItem(STORE_KEY); location.reload();}}}>Limpar localStorage</${Button}>
+        ${logStatus && html`<div class="text-sm text-ink-600">${logStatus}</div>`}
+      </div>
+    </${Card}>`;
+}
+
+function Admin({state, dispatch}) {
+  const [tab, setTab] = useState('config');
+  const tabs = [
+    {key:'config',   label:'Configuração'},
+    {key:'users',    label:'Utilizadores'},
+    {key:'backup',   label:'Backup'},
+    {key:'supabase', label:'Supabase'},
+    {key:'sistema',  label:'Sistema'},
+  ];
+  return html`
+    <div class="p-6 space-y-4 fade-in">
+      <${Tabs} tabs=${tabs} value=${tab} onChange=${setTab}/>
+      ${tab==='config'   && html`<${AdminConfig} state=${state} dispatch=${dispatch}/>`}
+      ${tab==='users'    && html`<${AdminUsers} state=${state} dispatch=${dispatch}/>`}
+      ${tab==='backup'   && html`<${AdminBackup} state=${state} dispatch=${dispatch}/>`}
+      ${tab==='supabase' && html`<${AdminSupabase} state=${state} dispatch=${dispatch}/>`}
+      ${tab==='sistema'  && html`<${AdminSistema} state=${state} dispatch=${dispatch}/>`}
+    </div>`;
+}
+
+/* ---------- LOGIN ---------- */
+function Login({dispatch, config, loginError}) {
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [show, setShow] = useState(false);
+  const submit = (e) => { e?.preventDefault(); if(!email||!senha) return; dispatch({type:'LOGIN',payload:{email,senha}}); };
+  const fill = (em, sn) => { setEmail(em); setSenha(sn); dispatch({type:'CLR_ERR'}); dispatch({type:'LOGIN',payload:{email:em,senha:sn}}); };
+  const resetData = () => { if (confirm('Limpar dados guardados e recarregar? (utilizadores demo serão restaurados)')) { localStorage.removeItem(STORE_KEY); location.reload(); } };
+
+  return html`
+    <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+         style=${{background:'linear-gradient(135deg,#0f172a 0%,#1e3a8a 60%,#172554 100%)'}}>
+      <div class="absolute inset-0 opacity-30 pointer-events-none" style=${{backgroundImage:'radial-gradient(circle at 20% 30%,#60a5fa55,transparent 50%),radial-gradient(circle at 80% 70%,#8b5cf655,transparent 50%)'}}></div>
+      <div class="relative w-full max-w-md fade-in">
+        <div class="bg-white rounded-2xl shadow-2xl border border-ink-200 overflow-hidden">
+          <div class="p-8 pb-6 text-center">
+            <div class="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 items-center justify-center shadow-lg mb-4">
+              ${config.logo ? html`<img src=${config.logo} class="w-full h-full rounded-2xl object-cover"/>` : html`<${Icon.Grid} size=${28} class="text-white"/>`}
+            </div>
+            <h1 class="text-xl font-semibold text-ink-900">${config.empresa}</h1>
+            <p class="text-sm text-ink-500 mt-1">Matriz de Competências · Acesso restrito</p>
+          </div>
+          <form onSubmit=${submit} class="px-8 pb-6 space-y-4">
+            <${Field} label="Email"><${Input} type="email" value=${email} onInput=${e=>{setEmail(e.target.value);dispatch({type:'CLR_ERR'});}} placeholder="utilizador@empresa.pt" autoFocus/></${Field}>
+            <${Field} label="Palavra-passe">
+              <div class="relative">
+                <${Input} type=${show?'text':'password'} value=${senha} onInput=${e=>{setSenha(e.target.value);dispatch({type:'CLR_ERR'});}} class="pr-10"/>
+                <button type="button" onClick=${()=>setShow(!show)} class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded text-ink-400 hover:text-ink-700">
+                  ${show ? '🙈' : '👁'}
+                </button>
+              </div>
+            </${Field}>
+            ${loginError && html`<div class="p-3 rounded-lg bg-rose-50 text-rose-700 text-sm border border-rose-100">${loginError}</div>`}
+            <button type="submit" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-medium shadow-sm transition">Entrar</button>
+          </form>
+          <div class="px-8 py-4 bg-ink-50 border-t border-ink-100">
+            <div class="text-xs font-medium text-ink-500 uppercase tracking-wide mb-2">Credenciais demo</div>
+            <div class="space-y-1.5 text-xs">
+              <button type="button" onClick=${()=>fill('admin@empresa.pt','admin123')} class="w-full flex items-center justify-between p-2 rounded-md bg-white border border-ink-200 hover:border-brand-400 transition group">
+                <span class="flex items-center gap-2"><${Badge} color="violet">Admin</${Badge}><span class="text-ink-600">admin@empresa.pt</span></span>
+                <span class="text-ink-400 font-mono group-hover:text-brand-600">admin123</span>
+              </button>
+              <button type="button" onClick=${()=>fill('coord@empresa.pt','coord123')} class="w-full flex items-center justify-between p-2 rounded-md bg-white border border-ink-200 hover:border-brand-400 transition group">
+                <span class="flex items-center gap-2"><${Badge} color="brand">Coordenador</${Badge}><span class="text-ink-600">coord@empresa.pt</span></span>
+                <span class="text-ink-400 font-mono group-hover:text-brand-600">coord123</span>
+              </button>
+              <button type="button" onClick=${()=>fill('user@empresa.pt','user123')} class="w-full flex items-center justify-between p-2 rounded-md bg-white border border-ink-200 hover:border-brand-400 transition group">
+                <span class="flex items-center gap-2"><${Badge} color="emerald">Utilizador</${Badge}><span class="text-ink-600">user@empresa.pt</span></span>
+                <span class="text-ink-400 font-mono group-hover:text-brand-600">user123</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="text-center text-xs text-white/60 mt-4">Matriz de Competências · v2.1 · <button type="button" onClick=${resetData} class="underline hover:text-white">Limpar dados</button></div>
+      </div>
+    </div>`;
+}
+
+/* ---------- CHANGE PASSWORD MODAL ---------- */
+function ChangePassword({user, dispatch, onClose}) {
+  const [curr, setCurr] = useState('');
+  const [nv1, setNv1] = useState('');
+  const [nv2, setNv2] = useState('');
+  const [err, setErr] = useState('');
+  const save = () => {
+    const u = user;
+    if (curr !== u.senha) return setErr('Palavra-passe atual incorreta.');
+    if (nv1.length < 6) return setErr('Nova palavra-passe precisa de pelo menos 6 caracteres.');
+    if (nv1 !== nv2) return setErr('A confirmação não coincide.');
+    dispatch({type:'CHG_PWD', payload:{id:u.id, senha:nv1}});
+    onClose(); alert('Palavra-passe alterada.');
+  };
+  return html`
+    <div class="space-y-4">
+      <${Field} label="Palavra-passe atual"><${Input} type="password" value=${curr} onInput=${e=>setCurr(e.target.value)}/></${Field}>
+      <${Field} label="Nova palavra-passe"><${Input} type="password" value=${nv1} onInput=${e=>setNv1(e.target.value)}/></${Field}>
+      <${Field} label="Confirmar nova palavra-passe"><${Input} type="password" value=${nv2} onInput=${e=>setNv2(e.target.value)}/></${Field}>
+      ${err && html`<div class="p-2 rounded bg-rose-50 text-rose-700 text-sm">${err}</div>`}
+      <div class="flex justify-end gap-2"><${Button} variant="outline" onClick=${onClose}>Cancelar</${Button}><${Button} onClick=${save}>Alterar</${Button}></div>
+    </div>`;
+}
+
+/* ---------- AI ASSISTANT ---------- */
+const RATING_WORDS = {
+  'excelente':5,'excepcional':5,'óptimo':5,'otimo':5,'optima':5,'ótima':5,'perfeito':5,'perfeita':5,'5':5,
+  'muito bom':4,'muito boa':4,'bom':4,'boa':4,'4':4,
+  'razoável':3,'razoavel':3,'médio':3,'medio':3,'média':3,'media':3,'suficiente':3,'3':3,
+  'fraco':2,'fraca':2,'baixo':2,'baixa':2,'insuficiente':2,'2':2,
+  'péssimo':1,'pessimo':1,'péssima':1,'pessima':1,'mau':1,'má':1,'muito fraco':1,'muito fraca':1,'1':1,
+  'zero':0,'nenhum':0,'nenhuma':0,'nulo':0,'nula':0,'0':0
+};
+
+const aiNorm = (s) => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+
+function findColab(low, state) {
+  const sorted = [...state.colaboradores].sort((a,b)=>b.nome.length-a.nome.length);
+  for (const c of sorted) { if (low.includes(aiNorm(c.nome))) return c; }
+  for (const c of sorted) {
+    const parts = aiNorm(c.nome).split(/\s+/).filter(p=>p.length>3);
+    if (parts.some(p => new RegExp('\\b'+p+'\\b').test(low))) return c;
+  }
+  return null;
+}
+function findComp(low, state) {
+  const sorted = [...state.competencias].sort((a,b)=>b.nome.length-a.nome.length);
+  for (const k of sorted) { if (low.includes(aiNorm(k.nome))) return k; }
+  return null;
+}
+function findRating(low) {
+  const keys = Object.keys(RATING_WORDS).sort((a,b)=>b.length-a.length);
+  for (const k of keys) {
+    const pat = new RegExp('\\b'+aiNorm(k).replace(/\s+/g,'\\s+')+'\\b');
+    if (pat.test(low)) return {rating: RATING_WORDS[k], word: k};
+  }
+  return null;
+}
+
+function buildColabSummary(colab, state) {
+  const avs = state.avaliacoes.filter(a => a.colaboradorId === colab.id);
+  const compById = Object.fromEntries(state.competencias.map(c=>[c.id,c]));
+  const avgGap = avs.length ? (avs.reduce((s,a)=>s+gap(a),0)/avs.length) : 0;
+  const criticos = avs.filter(a => gap(a) >= 3);
+  const fortes = [...avs].filter(a => (a.atual||0) >= 4).sort((a,b)=>(b.atual||0)-(a.atual||0)).slice(0,3);
+  const parts = [];
+  parts.push(`${colab.nome} é ${colab.funcao} no departamento ${colab.dep}, nível ${NIVEIS_LABEL[colab.nivel]||colab.nivel}, site ${colab.site}.`);
+  parts.push(`Potencial ${POTENCIAL_LABEL[colab.potencial||2].toLowerCase()}.`);
+  if (avs.length === 0) { parts.push('Sem avaliações registadas ainda — sugiro aplicar requisitos da função primeiro.'); }
+  else {
+    parts.push(`${avs.length} ${avs.length===1?'avaliação registada':'avaliações registadas'}, gap médio de ${avgGap.toFixed(1)}.`);
+    if (criticos.length) {
+      const nomes = criticos.map(a=>compById[a.competenciaId]?.nome).filter(Boolean).slice(0,3);
+      parts.push(`Pontos críticos: ${nomes.join(', ')}.`);
+    }
+    if (fortes.length) {
+      const nomes = fortes.map(a=>compById[a.competenciaId]?.nome).filter(Boolean);
+      parts.push(`Pontos fortes: ${nomes.join(', ')}.`);
+    }
+    const planosPendentes = avs.filter(a => gap(a) > 0 && (a.plano||'').trim()).length;
+    if (planosPendentes) parts.push(`${planosPendentes} ${planosPendentes===1?'plano de desenvolvimento':'planos de desenvolvimento'} em curso.`);
+  }
+  return parts.join(' ');
+}
+
+function buildColabSugestoes(colab, state) {
+  const avs = state.avaliacoes.filter(a => a.colaboradorId === colab.id);
+  const compById = Object.fromEntries(state.competencias.map(c=>[c.id,c]));
+  const sugestoes = [];
+  const criticos = avs.filter(a => gap(a) >= 3);
+  criticos.forEach(a => {
+    const c = compById[a.competenciaId];
+    if (c) sugestoes.push(`Prioridade alta: formação em "${c.nome}" (gap ${gap(a)}).`);
+  });
+  const semPlano = avs.filter(a => gap(a) > 0 && !(a.plano||'').trim());
+  if (semPlano.length) sugestoes.push(`${semPlano.length} avaliações com gap mas sem plano — recomendo definir acções.`);
+  const reqs = state.requisitos.filter(r => r.funcao===colab.funcao && r.nivel===colab.nivel);
+  const faltam = reqs.filter(r => !avs.some(a => a.competenciaId===r.competenciaId));
+  if (faltam.length) sugestoes.push(`Faltam avaliações em ${faltam.length} competências exigidas para ${colab.funcao} ${NIVEIS_LABEL[colab.nivel]||colab.nivel}.`);
+  if (!sugestoes.length) sugestoes.push('Perfil equilibrado — sem acções críticas recomendadas.');
+  return sugestoes;
+}
+
+function buildTopGaps(state, limit=5) {
+  const compById = Object.fromEntries(state.competencias.map(c=>[c.id,c]));
+  const colabById = Object.fromEntries(state.colaboradores.map(c=>[c.id,c]));
+  const ranked = state.avaliacoes
+    .map(a => ({g:gap(a), colab:colabById[a.colaboradorId], comp:compById[a.competenciaId]}))
+    .filter(x => x.g >= 3 && x.colab && x.comp)
+    .sort((a,b)=>b.g-a.g).slice(0, limit);
+  if (!ranked.length) return 'Não há gaps críticos no momento. Boa notícia!';
+  return `Top ${ranked.length} gaps críticos: ` + ranked.map((x,i)=>`${i+1}) ${x.colab.nome} em ${x.comp.nome} (gap ${x.g})`).join('; ') + '.';
+}
+
+function buildOverview(state) {
+  const n = state.colaboradores.length;
+  const nComps = state.competencias.length;
+  const nAvs = state.avaliacoes.length;
+  const gaps = state.avaliacoes.map(gap);
+  const criticos = gaps.filter(g=>g>=3).length;
+  const avgGap = gaps.length ? (gaps.reduce((s,g)=>s+g,0)/gaps.length) : 0;
+  const deps = uniq(state.colaboradores.map(c=>c.dep).filter(Boolean)).length;
+  const sites = uniq(state.colaboradores.map(c=>c.site).filter(Boolean)).length;
+  return `Temos ${n} colaboradores em ${deps} departamentos e ${sites} sites, com ${nComps} competências no catálogo. Total de ${nAvs} avaliações, gap médio ${avgGap.toFixed(1)}, ${criticos} em zona crítica.`;
+}
+
+function buildDepSummary(depNome, state) {
+  const cs = state.colaboradores.filter(c => aiNorm(c.dep) === aiNorm(depNome));
+  if (!cs.length) return `Não encontrei o departamento "${depNome}".`;
+  const avs = state.avaliacoes.filter(a => cs.some(c=>c.id===a.colaboradorId));
+  const avgGap = avs.length ? (avs.reduce((s,a)=>s+gap(a),0)/avs.length) : 0;
+  return `Departamento ${cs[0].dep} tem ${cs.length} ${cs.length===1?'colaborador':'colaboradores'}, ${avs.length} avaliações, gap médio ${avgGap.toFixed(1)}.`;
+}
+
+function parseAICommand(text, state) {
+  const low = aiNorm(text).trim();
+  if (!low) return {type:'UNKNOWN', reason:'Diz alguma coisa.'};
+
+  if (/^(sim|confirma(r|do)?|ok|okay|claro|pode ser|aceito|yes|certo|correto)[\.!?\s]*$/.test(low)) return {type:'CONFIRM'};
+  if (/^(nao|cancela(r)?|nope|no|cancelado)[\.!?\s]*$/.test(low)) return {type:'CANCEL'};
+  if (/^(ola|oi|bom dia|boa tarde|boa noite|hey|hello|hi)\b/.test(low)) return {type:'GREET'};
+  if (/\b(ajuda|comandos|help|o que (e que )?fazes|como usar|o que sabes fazer)\b/.test(low)) return {type:'HELP'};
+  if (/\b(resumo|sumario|overview|estado geral|estatistica|panorama)\b/.test(low)) return {type:'SUMMARY'};
+  if (/\b(top|maiores|piores|criticos)[a-z\s]*\bgap/.test(low) || /\bgaps (criticos|graves|maiores)\b/.test(low)) return {type:'TOP_GAPS'};
+
+  const colab = findColab(low, state);
+  const comp  = findComp(low, state);
+  const rat   = findRating(low);
+
+  // departamento?
+  const depMatch = state.colaboradores.map(c=>c.dep).filter(Boolean).find(d => low.includes(aiNorm(d)) && (low.includes('departamento') || low.includes('equipa') || low.includes('secao') || low.includes('secção')));
+  if (depMatch && !colab) return {type:'DEP', depNome: depMatch};
+
+  // RATE intent
+  if (colab && comp && rat) {
+    const existing = state.avaliacoes.find(a => a.colaboradorId===colab.id && a.competenciaId===comp.id);
+    return {
+      type: 'RATE', subtype: existing ? 'UPD' : 'ADD',
+      colab, comp, atual: rat.rating, ratingWord: rat.word,
+      esperado: existing ? existing.esperado : Math.min(5, rat.rating+1),
+      peso: existing ? existing.peso : 10,
+      existingId: existing?.id || null
+    };
+  }
+
+  // sugestões / ações
+  if (colab && /\b(sugest|recomend|o que fazer|plano|prioridad)/.test(low)) {
+    return {type:'SUGEST', colab};
+  }
+
+  // VIEW colab (any mention without rating goes here)
+  if (colab) return {type:'VIEW', colab};
+
+  if (rat && !colab) return {type:'UNKNOWN', reason:'Identifiquei uma avaliação, mas falta dizer qual o colaborador.'};
+  if (comp && !colab) return {type:'UNKNOWN', reason:`Identifiquei a competência "${comp.nome}", mas falta o colaborador.`};
+
+  return {type:'UNKNOWN', reason:'Não percebi. Tenta: "Mostra o João Silva", "Avaliação da Maria em Liderança é bom", "Top gaps", "Resumo geral", "Sugestões para o Pedro", "Ajuda".'};
+}
+
+function AIAssistant({state, dispatch, onOpenColab}) {
+  const [open, setOpen] = useState(false);
+  const firstName = (state.currentUser?.nome||'').split(' ')[0];
+  const [messages, setMessages] = useState([
+    {role:'bot', text:`Olá ${firstName}! Estou ligado à tua base de ${state.colaboradores.length} colaboradores e ${state.competencias.length} competências. Posso abrir fichas, registar avaliações, listar gaps ou dar sugestões.`}
+  ]);
+  const [input, setInput] = useState('');
+  const [pending, setPending] = useState(null);
+  const [listening, setListening] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(true);
+  const recognitionRef = useRef(null);
+  const listeningRef = useRef(false);
+  const scrollRef = useRef(null);
+  const handleSendRef = useRef(null);
+
+  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages, pending]);
+
+  const speak = useCallback((txt) => {
+    if (!voiceOn || !('speechSynthesis' in window)) return;
+    try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(txt); u.lang='pt-PT'; u.rate=1.05; speechSynthesis.speak(u); } catch(e){}
+  }, [voiceOn]);
+
+  const confirmPending = () => {
+    if (!pending) return;
+    if (pending.subtype === 'UPD') {
+      dispatch({type:'UPD_AVAL', payload:{id:pending.existingId, atual:pending.atual}});
+    } else {
+      dispatch({type:'ADD_AVAL', payload:{
+        colaboradorId:pending.colab.id, competenciaId:pending.comp.id,
+        atual:pending.atual, esperado:pending.esperado, peso:pending.peso,
+        plano:'', responsavel:'', prazo:'', carreira:''
+      }});
+    }
+    const done = `Feito. Avaliação registada para ${pending.colab.nome} em ${pending.comp.nome}.`;
+    setMessages(m => [...m, {role:'bot', text: done}]);
+    speak(done);
+    setPending(null);
+  };
+  const cancelPending = () => {
+    setMessages(m => [...m, {role:'bot', text:'OK, cancelado.'}]);
+    setPending(null);
+  };
+
+  const handleSend = (txt) => {
+    const text = (typeof txt === 'string' ? txt : input).trim();
+    if (!text) return;
+    setInput('');
+    setMessages(m => [...m, {role:'user', text}]);
+    const parsed = parseAICommand(text, state);
+
+    if (parsed.type === 'CONFIRM') {
+      if (pending) { confirmPending(); return; }
+      const r='Não há nenhuma acção pendente para confirmar.'; setMessages(m=>[...m,{role:'bot',text:r}]); speak(r); return;
+    }
+    if (parsed.type === 'CANCEL') {
+      if (pending) { cancelPending(); return; }
+      const r='Não há nada para cancelar.'; setMessages(m=>[...m,{role:'bot',text:r}]); speak(r); return;
+    }
+
+    let reply = '';
+    if (parsed.type === 'GREET') reply = `Olá${firstName?', '+firstName:''}! Como posso ajudar?`;
+    else if (parsed.type === 'HELP') reply = 'Comandos: "abre/mostra [nome]" para ver ficha · "[nome] em [competência] é [excelente/bom/médio/fraco/péssimo]" para avaliar · "sugestões para [nome]" para recomendações · "top gaps" · "resumo geral" · "departamento [nome]". Diz "sim" ou "não" para confirmar.';
+    else if (parsed.type === 'SUMMARY') reply = buildOverview(state);
+    else if (parsed.type === 'TOP_GAPS') reply = buildTopGaps(state);
+    else if (parsed.type === 'DEP') reply = buildDepSummary(parsed.depNome, state);
+    else if (parsed.type === 'SUGEST') {
+      const sug = buildColabSugestoes(parsed.colab, state);
+      reply = `Recomendações para ${parsed.colab.nome}: ${sug.join(' ')}`;
+      if (onOpenColab) onOpenColab(parsed.colab);
+    }
+    else if (parsed.type === 'VIEW') {
+      reply = buildColabSummary(parsed.colab, state) + ' Abri a ficha completa.';
+      if (onOpenColab) onOpenColab(parsed.colab);
+    }
+    else if (parsed.type === 'RATE') {
+      reply = `${parsed.subtype==='UPD'?'Vou actualizar':'Vou adicionar'} a avaliação de ${parsed.colab.nome} em "${parsed.comp.nome}" com nível ${parsed.atual} em 5 (${parsed.ratingWord}). Confirmas?`;
+      setPending(parsed);
+    }
+    else reply = parsed.reason || 'Não percebi.';
+
+    setMessages(m => [...m, {role:'bot', text: reply}]);
+    speak(reply);
+  };
+
+  handleSendRef.current = handleSend;
+
+  const ensureRecognition = () => {
+    if (recognitionRef.current) return recognitionRef.current;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return null;
+    const r = new SR();
+    r.lang='pt-PT'; r.continuous=true; r.interimResults=false;
+    r.onresult = (e) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          const t = (e.results[i][0].transcript||'').trim();
+          if (t) handleSendRef.current?.(t);
+        }
+      }
+    };
+    r.onerror = (e) => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        listeningRef.current = false; setListening(false);
+        alert('Permissão do microfone negada. Permite o acesso nas definições do browser.');
+      }
+    };
+    r.onend = () => {
+      if (listeningRef.current) { try { r.start(); } catch(e){} }
+      else setListening(false);
+    };
+    recognitionRef.current = r;
+    return r;
+  };
+
+  const toggleListen = () => {
+    const r = ensureRecognition();
+    if (!r) { alert('Este browser não suporta reconhecimento de voz. Usa Chrome ou Edge.'); return; }
+    if (listeningRef.current) {
+      listeningRef.current = false;
+      try { r.stop(); } catch(e){}
+      setListening(false);
+    } else {
+      listeningRef.current = true;
+      try { r.start(); setListening(true); } catch(e) { listeningRef.current=false; setListening(false); }
+    }
+  };
+
+  useEffect(() => () => { listeningRef.current = false; try { recognitionRef.current?.stop(); } catch(e){} try{ speechSynthesis?.cancel(); }catch(e){} }, []);
+
+  return html`
+    <${Fragment}>
+      ${!open && html`
+        <button onClick=${()=>setOpen(true)}
+          class="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-brand-600 text-white shadow-xl flex items-center justify-center hover:scale-105 transition no-print"
+          title="Assistente IA">
+          <${Icon.Sparkles} size=${24}/>
+        </button>`}
+
+      ${open && html`
+        <div class="fixed bottom-6 right-6 z-40 w-[420px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-3rem)] bg-white rounded-2xl shadow-2xl border border-ink-200 flex flex-col overflow-hidden no-print fade-in">
+          <div class="px-4 py-3 bg-gradient-to-r from-violet-600 to-brand-700 text-white flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><${Icon.Sparkles} size=${16}/></div>
+            <div class="flex-1">
+              <div class="text-sm font-semibold">Assistente IA</div>
+              <div class="text-[10px] text-white/70">${listening?'A ouvir…':'Voz + texto · contexto da base'}</div>
+            </div>
+            <button onClick=${()=>setVoiceOn(!voiceOn)} title=${voiceOn?'Desligar voz':'Ligar voz'} class="p-1.5 rounded hover:bg-white/10 text-white/90">
+              ${voiceOn ? '🔊' : '🔇'}
+            </button>
+            <button onClick=${()=>setOpen(false)} class="p-1.5 rounded hover:bg-white/10"><${Icon.Close} size=${16}/></button>
+          </div>
+
+          <div ref=${scrollRef} class="flex-1 overflow-y-auto p-4 space-y-3 bg-ink-50">
+            ${messages.map((m,i) => html`
+              <div key=${i} class=${'flex '+(m.role==='user'?'justify-end':'justify-start')}>
+                <div class=${'max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap '+(m.role==='user'?'bg-brand-600 text-white rounded-br-sm':'bg-white border border-ink-200 text-ink-800 rounded-bl-sm')}>${m.text}</div>
+              </div>`)}
+            ${pending && html`
+              <div class="bg-white border-2 border-violet-300 rounded-xl p-3 shadow-sm">
+                <div class="text-xs font-semibold text-violet-700 uppercase tracking-wide mb-2">Acção pendente</div>
+                <div class="text-sm text-ink-800 space-y-1">
+                  <div><span class="text-ink-500">Colaborador:</span> <span class="font-medium">${pending.colab.nome}</span></div>
+                  <div><span class="text-ink-500">Competência:</span> <span class="font-medium">${pending.comp.nome}</span></div>
+                  <div><span class="text-ink-500">Nível atual:</span> <span class="font-medium">${pending.atual}/5</span></div>
+                  <div><span class="text-ink-500">Esperado:</span> <span class="font-medium">${pending.esperado}/5</span></div>
+                  <div><span class="text-ink-500">Peso:</span> <span class="font-medium">${pending.peso}%</span></div>
+                  <div><span class="text-ink-500">Operação:</span> <span class="font-medium">${pending.subtype==='UPD'?'Actualizar existente':'Nova avaliação'}</span></div>
+                </div>
+                <div class="flex gap-2 mt-3">
+                  <button onClick=${confirmPending} class="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center justify-center gap-1"><${Icon.Check} size=${14}/> Confirmar</button>
+                  <button onClick=${cancelPending} class="flex-1 py-2 rounded-lg bg-ink-100 hover:bg-ink-200 text-ink-700 text-sm font-medium">Cancelar</button>
+                </div>
+                <div class="mt-2 text-[10px] text-ink-400 text-center">Ou diz "sim" / "não"</div>
+              </div>`}
+          </div>
+
+          <div class="p-3 border-t border-ink-100 bg-white">
+            <div class="flex items-end gap-2">
+              <button onClick=${toggleListen} title=${listening?'Parar (continua a ouvir até carregares)':'Começar a ouvir'}
+                class=${'shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition '+(listening?'bg-rose-500 text-white animate-pulse':'bg-ink-100 text-ink-600 hover:bg-ink-200')}>
+                ${listening ? html`<${Icon.MicOff} size=${18}/>` : html`<${Icon.Mic} size=${18}/>`}
+              </button>
+              <textarea value=${input} onInput=${e=>setInput(e.target.value)}
+                onKeyDown=${e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); handleSend(); } }}
+                placeholder=${listening?'A ouvir… fala à vontade':'Escreve ou liga o microfone…'} rows=${1}
+                class="flex-1 px-3 py-2 text-sm bg-ink-50 border border-ink-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent max-h-24"/>
+              <button onClick=${()=>handleSend()} class="shrink-0 w-10 h-10 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center">
+                <${Icon.Send} size=${16}/>
+              </button>
+            </div>
+            <div class="mt-2 text-[10px] text-ink-400 text-center">
+              "abre o João" · "top gaps" · "sugestões para o Pedro" · "resumo geral" · "ajuda"
+            </div>
+          </div>
+        </div>`}
+    </${Fragment}>`;
+}
+
+/* ---------- APP ROOT ---------- */
+function App() {
+  const [state, dispatch] = useReducer(reducer, undefined, initialState);
+  const [route, setRoute] = useState('dashboard');
+  const [showChangePwd, setShowChangePwd] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed')==='1');
+  const [aiColabView, setAiColabView] = useState(null);
+  const [aiColabEdit, setAiColabEdit] = useState(null);
+  useEffect(() => { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }, [state]);
+  useEffect(() => { localStorage.setItem('sidebar_collapsed', sidebarCollapsed?'1':'0'); }, [sidebarCollapsed]);
+
+  if (!state.currentUser) {
+    return html`<${Login} dispatch=${dispatch} config=${state.config} loginError=${state.loginError}/>`;
+  }
+
+  const allowed = ROLE_PAGES[state.currentUser.papel] || [];
+  const currentRoute = allowed.includes(route) ? route : (allowed[0] || 'dashboard');
+  const fullUser = state.users.find(u => u.id === state.currentUser.id);
+
+  const titles = {
+    dashboard:    ['Dashboard', 'Visão executiva da matriz de competências'],
+    colaboradores:['Colaboradores', state.colaboradores.length+' colaboradores em '+uniq(state.colaboradores.map(c=>c.site)).filter(Boolean).length+' sites'],
+    competencias: ['Competências', state.competencias.length+' competências no catálogo'],
+    requisitos:   ['Requisitos', state.requisitos.length+' requisitos por função'],
+    matriz:       ['Matriz', 'Heatmap colaborador × competência'],
+    avaliacoes:   ['Avaliações', state.avaliacoes.length+' registos'],
+    planos:       ['Planos', 'Ações, responsáveis e prazos'],
+    ninebox:      ['Nine-Box Grid', 'Performance × Potencial'],
+    evolucao:     ['Evolução', 'Histórico temporal da matriz'],
+    admin:        ['Administração', 'Configurações, utilizadores, backup e integrações'],
+  };
+  const [title, subtitle] = titles[currentRoute] || ['',''];
+
+  return html`
+    <div class="flex h-screen overflow-hidden bg-ink-50">
+      <${Sidebar} route=${currentRoute} setRoute=${setRoute} config=${state.config}
+                  currentUser=${state.currentUser} dispatch=${dispatch}
+                  onChangePwd=${()=>setShowChangePwd(true)}
+                  collapsed=${sidebarCollapsed} onToggleCollapsed=${()=>setSidebarCollapsed(!sidebarCollapsed)}/>
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <${TopBar} state=${state} dispatch=${dispatch} title=${title} subtitle=${subtitle}/>
+        <main class="flex-1 overflow-auto">
+          ${currentRoute==='dashboard'     && html`<${Dashboard} state=${state}/>`}
+          ${currentRoute==='colaboradores' && html`<${Colaboradores} state=${state} dispatch=${dispatch}/>`}
+          ${currentRoute==='competencias'  && html`<${Competencias} state=${state} dispatch=${dispatch}/>`}
+          ${currentRoute==='requisitos'    && html`<${Requisitos} state=${state} dispatch=${dispatch}/>`}
+          ${currentRoute==='matriz'        && html`<${Matriz} state=${state}/>`}
+          ${currentRoute==='avaliacoes'    && html`<${Avaliacoes} state=${state} dispatch=${dispatch}/>`}
+          ${currentRoute==='planos'        && html`<${Planos} state=${state}/>`}
+          ${currentRoute==='ninebox'       && html`<${NineBox} state=${state}/>`}
+          ${currentRoute==='evolucao'      && html`<${Evolucao} state=${state} dispatch=${dispatch}/>`}
+          ${currentRoute==='admin'         && html`<${Admin} state=${state} dispatch=${dispatch}/>`}
+        </main>
+      </div>
+      ${showChangePwd && fullUser && html`
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick=${()=>setShowChangePwd(false)}>
+          <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6" onClick=${(e)=>e.stopPropagation()}>
+            <h3 class="text-lg font-semibold mb-4">Alterar palavra-passe</h3>
+            <${ChangePassword} user=${fullUser} dispatch=${dispatch} onClose=${()=>setShowChangePwd(false)}/>
+          </div>
+        </div>`}
+      <${Modal} open=${!!aiColabView} onClose=${()=>setAiColabView(null)} title="Ficha do colaborador" wide=${true}>
+        ${aiColabView && html`<${ColabDetalhe} colab=${aiColabView} state=${state} dispatch=${dispatch} onClose=${()=>setAiColabView(null)} onEdit=${(c)=>setAiColabEdit(c)}/>`}
+      </${Modal}>
+      <${Modal} open=${!!aiColabEdit} onClose=${()=>setAiColabEdit(null)} title="Editar colaborador">
+        ${aiColabEdit && html`<${ColabForm} value=${aiColabEdit} state=${state} onSave=${f=>dispatch({type:'UPD_COLAB',payload:{...f,id:aiColabEdit.id}})} onClose=${()=>setAiColabEdit(null)}/>`}
+      </${Modal}>
+      ${state.currentUser.papel==='admin' && html`<${AIAssistant} state=${state} dispatch=${dispatch} onOpenColab=${setAiColabView}/>`}
+    </div>`;
+}
+
+ReactDOM.createRoot(document.getElementById('app')).render(html`<${App}/>`);
+</script>
+</body>
+</html>
