@@ -56,107 +56,175 @@ tailwind.config = {
 const { useState, useEffect, useMemo, useRef, useReducer, useCallback, Fragment } = React;
 const html = htm.bind(React.createElement);
 
+/* ---------- SUPABASE CLIENT (global) ---------- */
+const SUPABASE_URL = 'https://gkefmmxibaaqbnkzgqjm.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_mHGKb3HChg-fHDh7lt2Xmg_19uf6Yiz';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+window.sb = sb;
+
 /* ---------- SEED DATA ---------- */
 const SEED_COLABORADORES = [
-  {id:1,nome:"Anes Fernandes",dep:"Administrativo",funcao:"Assistente Administrativo",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:1,nome:"Anes Fernandes",dep:"Administrativo",funcao:"Assistente Administrativo",nivel:"Pl",site:"AHCC",potencial:2},
   {id:2,nome:"Angelo Frederico",dep:"HST",funcao:"Técnico de HST",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:3,nome:"António Gaspar",dep:"Engenharia",funcao:"Engº. Electromecânico",nivel:"Jr",site:"AHCC",potencial:3},
+  {id:3,nome:"António Gaspar",dep:"Engenharia",funcao:"Engº. Electromecânico",nivel:"Pl",site:"AHCC",potencial:2},
   {id:4,nome:"Basilia Alice Arceno",dep:"Administrativo",funcao:"Coordenadora Administrativa",nivel:"Pl",site:"AHCC",potencial:2},
   {id:5,nome:"Cândido Alfredo",dep:"Administrativo",funcao:"Assistente Administrativo",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:6,nome:"Carlos Luango",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:1},
+  {id:6,nome:"Carlos Luango",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:2},
   {id:7,nome:"Carlos Capita Gomes",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:2},
   {id:8,nome:"Daniel Chipilica Chiwale",dep:"Engenharia",funcao:"Técnico Fiscal de Obras Civis",nivel:"Pl",site:"AHCC",potencial:2},
   {id:9,nome:"Domingos Acácio",dep:"HST",funcao:"Técnico de Segurança no Trabalho",nivel:"Pl",site:"AHCC",potencial:2},
   {id:10,nome:"Edson da Conceição",dep:"Administrativo",funcao:"Técnico Administrativo",nivel:"Pl",site:"AHCC",potencial:2},
   {id:11,nome:"Elionay Malungo",dep:"Geologia",funcao:"Geólogo",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:12,nome:"Elvio W. Madureira",dep:"Informática",funcao:"Técnico de IT",nivel:"Pl",site:"AHCC",potencial:3},
+  {id:12,nome:"Elvio W. Madureira",dep:"Informática",funcao:"Técnico de IT",nivel:"Pl",site:"AHCC",potencial:2},
   {id:13,nome:"Gabriel A. Pedro",dep:"HST",funcao:"Técnico de HST",nivel:"Pl",site:"AHCC",potencial:2},
   {id:14,nome:"Gregório Victor",dep:"HST",funcao:"Técnico de HST",nivel:"Pl",site:"AHCC",potencial:2},
   {id:15,nome:"Hedwelde Paz",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:16,nome:"Hermenegildo Van-Dúnen",dep:"Topografia",funcao:"Topógrafo",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:16,nome:"Hermenegildo Van-Dúnen",dep:"Topografia",funcao:"Topográfo",nivel:"Pl",site:"AHCC",potencial:2},
   {id:17,nome:"João W. Kalley",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:18,nome:"Jussara Lourenço",dep:"Ambiental",funcao:"Engª. de Meio Ambiente",nivel:"Pl",site:"AHCC",potencial:3},
-  {id:19,nome:"Henriques Lucas",dep:"Topografia",funcao:"Auxiliar de Topografia",nivel:"Jr",site:"AHCC",potencial:2},
-  {id:20,nome:"Mario Barros",dep:"Administrativo",funcao:"Auxiliar Administrativo",nivel:"Jr",site:"AHCC",potencial:2},
+  {id:18,nome:"Jussara Lourenço",dep:"Ambiental",funcao:"Engª. de Meio Ambiente",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:19,nome:"Henriques Lucas",dep:"Topografia",funcao:"Auxiliar de Topografia",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:20,nome:"Mario Barros",dep:"Administrativo",funcao:"Auxiliar Administrativo",nivel:"Pl",site:"AHCC",potencial:2},
   {id:21,nome:"Miguel Mayonde",dep:"Capital Humano",funcao:"Técnico de Capital Humano",nivel:"Pl",site:"AHCC",potencial:2},
   {id:22,nome:"Noé Bandeira",dep:"HST",funcao:"Técnico de HST",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:23,nome:"Pedro José",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:1},
+  {id:23,nome:"Pedro José",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:2},
   {id:24,nome:"Rogério Miguel",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:25,nome:"Sabino Kawawa",dep:"Topografia",funcao:"Auxiliar de Topografia",nivel:"Jr",site:"AHCC",potencial:2},
-  {id:26,nome:"Sérgio Bernardo",dep:"Engenharia",funcao:"Projectista",nivel:"Pl",site:"AHCC",potencial:3},
+  {id:25,nome:"Sabino Kawawa",dep:"Topografia",funcao:"Auxiliar de Topografia",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:26,nome:"Sérgio Bernardo",dep:"Engenharia",funcao:"Projectista",nivel:"Pl",site:"AHCC",potencial:2},
   {id:27,nome:"Tengo Vicente",dep:"Administrativo",funcao:"Motorista",nivel:"Pl",site:"AHCC",potencial:2},
   {id:28,nome:"Vladimir dos Santos",dep:"HST",funcao:"Técnico de HST",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:29,nome:"Vicente Justino José",dep:"Ambiental",funcao:"Engº. de Meio Ambiente",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:30,nome:"José Gomes Calulo",dep:"Topografia",funcao:"Auxiliar de Topografia",nivel:"Jr",site:"AHCC",potencial:1},
-  {id:31,nome:"Eliseu Messo",dep:"Engenharia",funcao:"Engº. Civil",nivel:"Pl",site:"AHCC",potencial:3},
-  {id:32,nome:"Andrei Eini",dep:"Civil",funcao:"Técnico Fiscal de Obras Civis",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:29,nome:"Vicente Justino José",dep:"Ambiental",funcao:"Engº. De Meio Ambiente",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:30,nome:"José Gomes Calulo",dep:"Topografia",funcao:"Auxiliar de Topografia",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:31,nome:"Eliseu Messo",dep:"Engenharia",funcao:"Engº. Civil",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:32,nome:"Andrei Eini",dep:"Civil",funcao:"Técnico Fiscal de Obras Civil",nivel:"Pl",site:"AHCC",potencial:2},
   {id:33,nome:"António da Cruz Branco",dep:"Controlo Tecnológico",funcao:"Técnico Fiscal em Geotécnia",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:34,nome:"Antonio Pineau",dep:"Engenharia",funcao:"Engº. de Medições e Relatórios",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:34,nome:"Antonio Pineau",dep:"Engenharia",funcao:"Engº. de Medições e Relatórios mensais",nivel:"Pl",site:"AHCC",potencial:2},
   {id:35,nome:"Bruno de Sousa",dep:"Geologia",funcao:"Geólogo",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:36,nome:"Carlos Baptista",dep:"Geotécnia",funcao:"Gerente Electromecânica",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:36,nome:"Carlos Baptista",dep:"Geotécnia",funcao:"Gerente Electromecânica",nivel:"Pl",site:"AHCC",potencial:2},
   {id:37,nome:"Carlos Filipe Rodrigues",dep:"Geologia",funcao:"Geólogo",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:38,nome:"Caroline Borchardt",dep:"Engenharia",funcao:"Engª. de Planeamento",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:38,nome:"Caroline Borchardt",dep:"Engenharia",funcao:"Engª. de Planeamento",nivel:"Pl",site:"AHCC",potencial:2},
   {id:39,nome:"Daulo Carneiro",dep:"Civil",funcao:"Engº. Civil",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:40,nome:"Dulio António de Oliveira",dep:"Engenharia",funcao:"Engº. Civil",nivel:"Sr",site:"AHCC",potencial:3},
-  {id:41,nome:"Edgar Lira Rangel",dep:"Geotécnia",funcao:"Engº. Geotécnico",nivel:"Sr",site:"AHCC",potencial:3},
-  {id:42,nome:"Eduardo Aguilar Gonzales",dep:"Topografia",funcao:"Topógrafo",nivel:"Sr",site:"AHCC",potencial:2},
-  {id:43,nome:"Gilson Correia da Silva",dep:"Engenharia",funcao:"Electrotecnia e Comissionamento",nivel:"Sr",site:"AHCC",potencial:3},
-  {id:44,nome:"Ilidio José Veloso Cohen",dep:"Civil",funcao:"Gerente de Obras Civis",nivel:"Sr",site:"AHCC",potencial:3},
-  {id:45,nome:"João Paulo Alves",dep:"Qualidade",funcao:"Engenheiro de Qualidade",nivel:"Sr",site:"AHCC",potencial:3},
-  {id:46,nome:"Jorge Cerejo Brasil",dep:"HST",funcao:"Técnico de Segurança no Trabalho",nivel:"Sr",site:"AHCC",potencial:2},
-  {id:47,nome:"José Toledo",dep:"Civil",funcao:"Engº. Civil",nivel:"Sr",site:"AHCC",potencial:2},
-  {id:48,nome:"Karoline Guimarães",dep:"Engenharia",funcao:"Gestora de Contratos",nivel:"Sr",site:"AIBC_SEDE",potencial:3},
-  {id:49,nome:"Paulo Resende",dep:"Civil",funcao:"Engº. Civil",nivel:"Sr",site:"AHCC",potencial:2},
-  {id:50,nome:"Luiggi Virgilli Guimarães",dep:"Administração da Fiscalização",funcao:"Diretor da Fiscalização",nivel:"Sr",site:"AIBC_SEDE",potencial:3},
+  {id:40,nome:"Dulio António de Oliveira",dep:"Engenharia",funcao:"Engº. Civil",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:41,nome:"Edgar Lira Rangel",dep:"Geotécnia",funcao:"Engº. Geotécnico",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:42,nome:"Eduardo Aguilar Gonzales",dep:"Topografia",funcao:"Topografo",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:43,nome:"Gilson Correia da Silva",dep:"Engenharia",funcao:"Electrotécnia e Comissionamento",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:44,nome:"Ilidio José Veloso Cohen",dep:"Civil",funcao:"Gerente de Obras Civis",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:45,nome:"João Paulo Alves",dep:"Qualidade",funcao:"Engenheiro de Qualidade",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:46,nome:"Jorge Cerejo Brasil",dep:"HST",funcao:"Técnico de Segurança no Trabalho",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:47,nome:"José Toledo",dep:"Civil",funcao:"Engº. Civil",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:48,nome:"Karoline Guimarães",dep:"Engenharia",funcao:"Gestora de Contractos",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:49,nome:"Paulo Resende",dep:"Civil",funcao:"Engº. Civil",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:50,nome:"Luiggi Virgilli Guimaraes",dep:"Administração da Fiscalização",funcao:"Director da Fiscalização",nivel:"Pl",site:"SEDE",potencial:2},
   {id:51,nome:"Marcelo Bareto",dep:"Civil",funcao:"Engº. Civil",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:52,nome:"Marcio Painhas",dep:"Engenharia",funcao:"Engº. de Contratos",nivel:"Sr",site:"AHCC",potencial:3},
-  {id:53,nome:"Mário G.L. Tejo",dep:"HST",funcao:"Engº. de Segurança no Trabalho",nivel:"Sr",site:"AHCC",potencial:2},
-  {id:54,nome:"Mauricio Vieiro",dep:"Engenharia",funcao:"Electromecânico",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:55,nome:"Nelson de Oliveira Custódio",dep:"Administração da Fiscalização",funcao:"Chefe da Fiscalização",nivel:"Sr",site:"AHCC",potencial:3},
+  {id:52,nome:"Marcio Painhas",dep:"Engenharia",funcao:"Engº. de Contractos",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:53,nome:"Mário G.L.Tejo",dep:"HST",funcao:"Engº. De Segurança no Trabalho",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:54,nome:"Mauricio Vieiro",dep:"Engenharia",funcao:"Electromêcanico",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:55,nome:"Nelson  de O. Custódio",dep:"Administração da Fiscalização",funcao:"Chefe da Fiscalização",nivel:"Pl",site:"AHCC",potencial:2},
   {id:56,nome:"Nielson Alves",dep:"Fiscalização",funcao:"Electrotécnico de Montagem",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:57,nome:"Paulo Roberto Oliveira",dep:"Geotécnia",funcao:"Engº. Geotécnico",nivel:"Sr",site:"AHCC",potencial:2},
-  {id:58,nome:"Pedro Gil Natário",dep:"Geotécnia",funcao:"Engº. Geotécnico",nivel:"Sr",site:"AHCC",potencial:2},
+  {id:57,nome:"Paulo Roberto Oliveira",dep:"Geotécnia",funcao:"Engº. Geotécnico",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:58,nome:"Pedro Gil Natário",dep:"Geotécnia",funcao:"Engº. Geotécnico",nivel:"Pl",site:"AHCC",potencial:2},
   {id:59,nome:"Zedequias Bento dos Santos",dep:"Topografia",funcao:"Topógrafo",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:60,nome:"Filipe e Sousa",dep:"Engenharia",funcao:"Electromecânico",nivel:"Pl",site:"AHCC",potencial:2},
-  {id:61,nome:"Adilson Mangueira Nelumba",dep:"Conselho de Administração",funcao:"Presidente do Conselho de Administração",nivel:"Sr",site:"SEDE",potencial:3},
-  {id:62,nome:"Abel Lopes",dep:"Transportes",funcao:"Motorista",nivel:"Pl",site:"SEDE",potencial:1},
+  {id:60,nome:"Filipe e Sousa",dep:"Engenharia",funcao:"Electromêcanico",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:61,nome:"Adilson Mangueira Nelumba",dep:"Conselho de Administração",funcao:"Presidente do Conselho de Administração",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:62,nome:"Abel Lopes",dep:"Transportes",funcao:"Motorista",nivel:"Pl",site:"SEDE",potencial:2},
   {id:63,nome:"Afonso Nachiqueleyi",dep:"Comunicação e Marketing",funcao:"Técnico Designer",nivel:"Pl",site:"SEDE",potencial:2},
-  {id:64,nome:"Aline Falcão Costa",dep:"Comercial",funcao:"Diretora Comercial",nivel:"Sr",site:"SEDE",potencial:3},
-  {id:65,nome:"Angélica Fonseca",dep:"Seguros",funcao:"Diretora de Seguros",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:64,nome:"Aline Falcão Costa",dep:"Comercial",funcao:"Directora Comercial",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:65,nome:"Angélica Fonseca",dep:"Seguros",funcao:"Directora de Seguro",nivel:"Pl",site:"SEDE",potencial:2},
   {id:66,nome:"Anisio Samalunga",dep:"Administrativo",funcao:"Auxiliar de Manutenção",nivel:"Pl",site:"SEDE",potencial:2},
   {id:67,nome:"António E. Fernandes",dep:"Transportes",funcao:"Motorista",nivel:"Pl",site:"SEDE",potencial:2},
-  {id:68,nome:"António Ecunde",dep:"Administrativo",funcao:"Auxiliar de Logística",nivel:"Pl",site:"SEDE",potencial:2},
-  {id:69,nome:"Baptista Alberto",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:1},
-  {id:70,nome:"Branco Pedro",dep:"Administrativo",funcao:"Auxiliar de Logística",nivel:"Jr",site:"SEDE",potencial:2},
+  {id:68,nome:"António Ecunde",dep:"Administrativo",funcao:"Auxiliar de Logistica",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:69,nome:"Baptista alberto",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:70,nome:"Branco Pedro",dep:"Administrativo",funcao:"Auxiliar de Logistica",nivel:"Pl",site:"SEDE",potencial:2},
   {id:71,nome:"Bráulio dos Santos",dep:"Relações Institucionais",funcao:"Técnico de Relações Institucionais",nivel:"Pl",site:"SEDE",potencial:2},
-  {id:72,nome:"Bruyalcin Cabenda",dep:"Capital Humano",funcao:"Diretor de Capital Humano",nivel:"Sr",site:"SEDE",potencial:3},
-  {id:73,nome:"Carlos Cassinda",dep:"Departamento Médico",funcao:"Diretor do Departamento Médico",nivel:"Sr",site:"SEDE",potencial:3},
-  {id:74,nome:"Cecília Cândido",dep:"Comunicação e Marketing",funcao:"Coordenadora de Marketing",nivel:"Sr",site:"SEDE",potencial:3},
-  {id:75,nome:"Claúdio Barros",dep:"Administrativo",funcao:"Diretor de Planeamento AIBC",nivel:"Sr",site:"AIBC_SEDE",potencial:3},
+  {id:72,nome:"Bruyalcin Cabenda",dep:"Capital Humano",funcao:"Director de Capital Humano",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:73,nome:"Carlos Cassinda",dep:"Departamento Médico",funcao:"Director do Departamento Médico",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:74,nome:"Cecília Cândido",dep:"Comunicação e Marketing",funcao:"Coordenadora de Marketing",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:75,nome:"Claúdio Barros",dep:"Administrativo",funcao:"Director de Planeamento AIBC",nivel:"Pl",site:"SEDE",potencial:2},
   {id:76,nome:"Claudio Bonifácio",dep:"Relações Institucionais",funcao:"Técnico de Relações Institucionais",nivel:"Pl",site:"SEDE",potencial:2},
-  {id:77,nome:"Dangereux G. António",dep:"Transportes",funcao:"Diretor de Transportes",nivel:"Sr",site:"SEDE",potencial:2},
-  {id:78,nome:"Delfina Baby",dep:"Contabilidade e Finanças",funcao:"Técnica de Finanças",nivel:"Pl",site:"SEDE",potencial:3},
+  {id:77,nome:"Dangereux G. António",dep:"Transportes",funcao:"Director de Transportes",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:78,nome:"Delfina Baby",dep:"Contabilidade e Finanças",funcao:"Técnica de Finanças",nivel:"Pl",site:"SEDE",potencial:2},
   {id:79,nome:"Djamila Capita",dep:"Lisandra Eventos",funcao:"Coordenadora de Eventos",nivel:"Pl",site:"SEDE",potencial:2},
-  {id:80,nome:"Domingos Bartolomeu",dep:"Transportes",funcao:"Motorista",nivel:"Sr",site:"SEDE",potencial:2},
-  {id:81,nome:"Muvulameno Wanuque",dep:"Gabinete Jurídico",funcao:"Advogada Sénior",nivel:"Sr",site:"SEDE",potencial:3},
-  {id:82,nome:"Emanuel de Oliveira",dep:"QHSE",funcao:"Diretor de QHSE",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:80,nome:"Domingos Bartolomeu",dep:"Transportes",funcao:"Motorista",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:81,nome:"Muvulameno Wanuque",dep:"Gabinete Jurídico",funcao:"Advogada Sénior",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:82,nome:"Emanuel de Oliveira",dep:"QHSE",funcao:"Director de QHSE",nivel:"Pl",site:"SEDE",potencial:2},
   {id:83,nome:"Eleutério Sampaio",dep:"Audio Visual",funcao:"Video Maker",nivel:"Pl",site:"SEDE",potencial:2},
   {id:84,nome:"Ermelinda dos Santos",dep:"Administrativo",funcao:"Supervisora Administrativa",nivel:"Pl",site:"SEDE",potencial:2},
-  {id:85,nome:"Filipe Marques",dep:"Transportes",funcao:"Motorista",nivel:"Sr",site:"SEDE",potencial:2},
-  {id:86,nome:"Flórida Bastos",dep:"QHSE",funcao:"Técnica de QHSE",nivel:"Sr",site:"SEDE",potencial:3},
-  {id:87,nome:"Grildo Francisco",dep:"Petróleo e Gás",funcao:"Diretor de Petróleo, Gás e Biocombustíveis",nivel:"Sr",site:"SEDE",potencial:3},
-  {id:88,nome:"Guilherme Máquina",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:1},
-  {id:89,nome:"Helena Ignace",dep:"QHSE",funcao:"Técnica Sénior de QHSE",nivel:"Sr",site:"SEDE",potencial:3},
-  {id:90,nome:"Hélio Mangueira Nelumba",dep:"Conselho de Administração",funcao:"Administrador Executivo",nivel:"Sr",site:"SEDE",potencial:3},
+  {id:85,nome:"Filipe Marques",dep:"Transportes",funcao:"Motorista",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:86,nome:"Flórida Bastos",dep:"QHSE",funcao:"Técnica de QHSE",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:87,nome:"Grildo Francisco",dep:"Petroléo Gás",funcao:"Director de Petroléo Gás e Bio Combustiveis",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:88,nome:"Guilherme Máquina",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:89,nome:"Helena Ignace",dep:"QHSE",funcao:"Técnica Senior de QHSE",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:90,nome:"Hélio Mangueira Nelumba",dep:"Conselho de Administração",funcao:"Administrador Executivo",nivel:"Pl",site:"SEDE",potencial:2},
   {id:91,nome:"Henrique Afonso",dep:"Administrativo",funcao:"Auxiliar de Manutenção",nivel:"Pl",site:"SEDE",potencial:2},
   {id:92,nome:"Jefferson Neto",dep:"Comunicação e Marketing",funcao:"Coordenador de Comunicação",nivel:"Pl",site:"SEDE",potencial:2},
   {id:93,nome:"João Correia",dep:"Administrativo",funcao:"Auxiliar de Logística",nivel:"Pl",site:"SEDE",potencial:2},
-  {id:94,nome:"José Cardoso",dep:"Transportes",funcao:"Motorista",nivel:"Jr",site:"SEDE",potencial:2},
-  {id:95,nome:"Nadia da Silva",dep:"Petróleo e Gás",funcao:"Engenheira Geóloga Sénior",nivel:"Sr",site:"SEDE",potencial:3},
-  {id:96,nome:"Julmara Serrado",dep:"Comercial",funcao:"Coordenadora Comercial",nivel:"Pl",site:"SEDE",potencial:3},
-  {id:97,nome:"Kudimuenha Gonçalves",dep:"Capital Humano",funcao:"Técnica Sénior de Capital Humano",nivel:"Sr",site:"SEDE",potencial:3},
-  {id:98,nome:"Pedro Cristovão",dep:"Tecnologia de Informação",funcao:"Diretor de IT",nivel:"Sr",site:"SEDE",potencial:3},
-  {id:99,nome:"Ana Capata",dep:"Contabilidade e Finanças",funcao:"Diretora de Contabilidade e Finanças",nivel:"Sr",site:"SEDE",potencial:3}
+  {id:94,nome:"José Cardoso",dep:"Transportes",funcao:"Motorista",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:95,nome:"Nadia da Silva",dep:"Petroléo Gás",funcao:"Engenheira  Geológa Sénior",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:96,nome:"Julmara Serrrado",dep:"Comercial",funcao:"Coordenadora Comercial",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:97,nome:"Kudimuenha Gonçalves",dep:"Capital Humano",funcao:"Técnica Sénior de Capital Humano",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:98,nome:"Laurinda Francisco",dep:"Administrativo",funcao:"Auxiliar de Limpeza",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:99,nome:"Leonardo Tchipalanga",dep:"Administrativo",funcao:"Auxiliar de Manutenção",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:100,nome:"Lisandra Francisco Lemos",dep:"Conselho de Administração",funcao:"Administradora Executiva",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:101,nome:"Lutumba Mayasi",dep:"QHSE",funcao:"Coordenador de QHSE",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:102,nome:"Maldonado Mateia",dep:"Planeamento",funcao:"Director de Planeamento",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:103,nome:"Maria João",dep:"Administrativo",funcao:"Auxiliar de Limpesa",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:104,nome:"Mauro Mangueira",dep:"Departamento Médico",funcao:"Técnico de Enfermagem",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:105,nome:"Milton Domingos",dep:"Contabilidade e Finanças",funcao:"Técnico de Finanças",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:106,nome:"Mizé Timóteo",dep:"Administrativo",funcao:"Auxiliar de Limpesa",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:107,nome:"Ndona M. Mfutila",dep:"Administrativo",funcao:"Recepcionista",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:108,nome:"Nelo Esteves",dep:"Lisandra Eventos",funcao:"Assessor de Eventos",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:109,nome:"Nuria João",dep:"Administrativo",funcao:"Secretária Executiva",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:110,nome:"Paulina Bandeira",dep:"Seguros",funcao:"Tecnica de Seguros",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:111,nome:"Paulo francisco",dep:"Planeamento",funcao:"Técnico de Planeamento",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:112,nome:"Pedro Cristovão",dep:"Tecnologia de Informação",funcao:"Director de IT",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:113,nome:"Pedro Cassumbe",dep:"Transportes",funcao:"Motorista",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:114,nome:"Pedro Nelumba",dep:"Administrativo",funcao:"Auxiliar de Logistica",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:115,nome:"Robson Capita",dep:"Departamento Técnico",funcao:"Arquitecto",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:116,nome:"Sandra Chiwale",dep:"Administrativo",funcao:"Coordenadora Administrativa e  Transportes",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:117,nome:"Sidónio Teixeira",dep:"Departamento Técnico",funcao:"Técnico Civil",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:118,nome:"Fabiana Patricio dos Santos",dep:"Lisandra Eventos",funcao:"Directora de Eventos",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:119,nome:"Delfina José",dep:"Departamento Médico",funcao:"Técnica Júnior de Enfermagem",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:120,nome:"Tomás Lucas",dep:"Gabinete Jurídico",funcao:"Director do Gabinte Jurídico",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:121,nome:"Vitorino Ambrósio",dep:"Administrativo",funcao:"Director Administrativo",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:122,nome:"Yuran Francisco",dep:"Capital Humano",funcao:"Técnico Senior de Capital Humano",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:123,nome:"Aldir da C. Baltazar",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:124,nome:"Andradez Vitangui",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:125,nome:"André Luís Chivala",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:126,nome:"Costa Sebastião",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:127,nome:"Daniel Correia",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:128,nome:"Efigenio Mayembe",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:129,nome:"Fernando Pata",dep:"Administrativo",funcao:"Suprevisor de Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:130,nome:"Francisco  Yava",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:131,nome:"Gonga de Almeida",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:132,nome:"Hamilton Santana",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:133,nome:"Ilidio Baltazar",dep:"Administrativo",funcao:"Suprevisor de Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:134,nome:"Jacinto Gonga",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:135,nome:"João Mateus Gonga",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:136,nome:"Jorge Chico",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:137,nome:"Mário N.Sachambula",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:138,nome:"Miguel Francisco",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:139,nome:"Rafael Michingi",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:140,nome:"Ismael Macula",dep:"Administrativo",funcao:"Segurança Interna",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:141,nome:"Angelina Gonçalves",dep:"Departamento Técnico",funcao:"Arquitéto Junior",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:142,nome:"António Nvunda",dep:"Departamento Técnico",funcao:"Arquitéta Junior",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:143,nome:"Maria Ferreira",dep:"Departamento Técnico",funcao:"Arquitéta Junior",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:144,nome:"Irlanda das Dores Capita",dep:"Administrativo",funcao:"Auxiliar de Cozinha",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:145,nome:"Rita Caluvala",dep:"Administrativo",funcao:"Auxiliar de Limpesa",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:146,nome:"Yara Silvino",dep:"Comercial",funcao:"Técnica Comercial",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:147,nome:"Ana Capata",dep:"Contabilidade e Finanças",funcao:"Directora de Contabilidade e Finanças",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:148,nome:"Elsa  Balanca",dep:"Planeamento",funcao:"Técnica de planeamento",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:149,nome:"Cipriano Kotenda",dep:"Administrativo",funcao:"Assessor de Eventos",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:150,nome:"Marcos Cardoso",dep:"Projectos Especiais",funcao:"Director de Projectos Espécias",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:151,nome:"Joel Nelumba",dep:"QHSE",funcao:"Técnico de QHSE",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:152,nome:"Edna Diogo",dep:"Lisandra Eventos",funcao:"Assessor de Eventos",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:153,nome:"Edmilsol Praia",dep:"Pesquisa e Desenvolvimento",funcao:"Director de Pesquisa e Desenvolvimento",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:154,nome:"Marislaine da Silva",dep:"Capital Humano",funcao:"Técnica de capital Humano",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:155,nome:"Marlene Quitoto",dep:"Capital Humano",funcao:"Técnica de capital Humano",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:156,nome:"Hermenegildo Adão",dep:"Contabilidade e Finanças",funcao:"Coordenador Financeiro",nivel:"Pl",site:"AHCC",potencial:2},
+  {id:157,nome:"Elsa Muginga",dep:"Planeamento",funcao:"Téc. de Planeamento",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:158,nome:"Cipriano Kotenda",dep:"Lisandra Eventos",funcao:"Auxiliar de Logística",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:159,nome:"Marcos Cardoso",dep:"Projectos Especiais",funcao:"Director de Projectos Espécias",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:160,nome:"Edna Diogo",dep:"Lisandra Eventos",funcao:"Assessor de Eventos",nivel:"Pl",site:"SEDE",potencial:2},
+  {id:161,nome:"Edmilson Praia",dep:"Pesquisa e Desenvolvimento",funcao:"Director de Pesquisa e Desenvolvimento",nivel:"Pl",site:"SEDE",potencial:2}
 ];
 
 const SEED_COMPETENCIAS = [
@@ -208,16 +276,10 @@ const DEFAULT_CONFIG = {
   empresa: 'RH',
   logo: '',
   corPrimaria: '#2563eb',
-  supabaseUrl: '',
-  supabaseKey: '',
-  cloudHabilitado: false
+  supabaseUrl: SUPABASE_URL,
+  supabaseKey: SUPABASE_PUBLISHABLE_KEY,
+  cloudHabilitado: true
 };
-
-const SEED_USERS = [
-  {id:'u1',nome:'Administrador',email:'admin@empresa.pt',papel:'admin',senha:'admin123',ativo:true},
-  {id:'u2',nome:'Coordenador RH',email:'coord@empresa.pt',papel:'coordenador',senha:'coord123',ativo:true},
-  {id:'u3',nome:'Utilizador Demo',email:'user@empresa.pt',papel:'usuario',senha:'user123',ativo:true}
-];
 
 const NIVEIS = ['Jr','Pl','Sr'];
 const NIVEIS_LABEL = {Jr:'Júnior',Pl:'Pleno',Sr:'Sénior'};
@@ -241,17 +303,24 @@ const initialState = () => {
       avaliacoes:    s.avaliacoes    || SEED_AVALIACOES,
       requisitos:    s.requisitos    || SEED_REQUISITOS,
       snapshots:     s.snapshots     || [],
-      users:         s.users         || SEED_USERS,
-      config: { ...DEFAULT_CONFIG, ...(s.config||{}) },
-      currentUser:   s.currentUser   || null,
-      loginError:    null
+      users:         [],
+      config: (() => {
+        const merged = { ...DEFAULT_CONFIG, ...(s.config||{}) };
+        merged.supabaseUrl = SUPABASE_URL;
+        merged.supabaseKey = SUPABASE_PUBLISHABLE_KEY;
+        merged.cloudHabilitado = true;
+        return merged;
+      })(),
+      currentUser:   null,
+      loginError:    null,
+      authLoading:   true
     };
   } catch(e){} }
   return {
     colaboradores: SEED_COLABORADORES, competencias: SEED_COMPETENCIAS,
     avaliacoes: SEED_AVALIACOES, requisitos: SEED_REQUISITOS,
-    snapshots: [], users: SEED_USERS, config: DEFAULT_CONFIG,
-    currentUser: null, loginError: null
+    snapshots: [], users: [], config: DEFAULT_CONFIG,
+    currentUser: null, loginError: null, authLoading: true
   };
 };
 
@@ -288,22 +357,100 @@ function reducer(state, action) {
   }
   if (K==='ADD_SNAP')  { const id = 's'+Date.now().toString(36); return {...state, snapshots:[...state.snapshots, {id, data:new Date().toISOString(), descricao:action.payload||'Snapshot', avaliacoes:JSON.parse(JSON.stringify(state.avaliacoes))}]}; }
   if (K==='DEL_SNAP')  return {...state, snapshots: state.snapshots.filter(s=>s.id!==action.payload)};
-  if (K==='ADD_USER')  { const id = 'u'+Date.now().toString(36); return {...state, users:[...state.users, {...action.payload, id}]}; }
-  if (K==='UPD_USER')  return {...state, users: state.users.map(u=>u.id===action.payload.id?{...u,...action.payload}:u)};
-  if (K==='DEL_USER')  return {...state, users: state.users.filter(u=>u.id!==action.payload)};
   if (K==='UPD_CFG')   return {...state, config: {...state.config, ...action.payload}};
   if (K==='IMPORT')    return {...state, ...action.payload};
-  if (K==='LOAD')      return {...action.payload, currentUser:state.currentUser};
-  if (K==='RESET')     return {...initialState(), currentUser:state.currentUser};
-  if (K==='LOGIN') {
-    const u = state.users.find(x => x.email.toLowerCase()===String(action.payload.email||'').toLowerCase().trim() && x.senha===action.payload.senha && x.ativo);
-    if (!u) return {...state, loginError:'Credenciais inválidas ou utilizador inativo.'};
-    return {...state, currentUser:{id:u.id,nome:u.nome,email:u.email,papel:u.papel}, loginError:null};
+  if (K==='LOAD')      return {...action.payload, currentUser:state.currentUser, authLoading:false};
+  if (K==='RESET')     return {...initialState(), currentUser:state.currentUser, authLoading:false};
+  if (K==='SET_AUTH_USER') {
+    const p = action.payload;
+    if (!p) return {...state, currentUser:null, loginError:null, authLoading:false};
+    return {...state, currentUser:{id:p.id,nome:p.nome,email:p.email,papel:p.papel}, loginError:null, authLoading:false};
   }
-  if (K==='LOGOUT')    return {...state, currentUser:null, loginError:null};
+  if (K==='SET_PROFILES') {
+    return {...state, users: action.payload};
+  }
+  if (K==='SET_AUTH_LOADING') return {...state, authLoading: !!action.payload};
+  if (K==='SET_LOGIN_ERROR') return {...state, loginError: action.payload || null, authLoading:false};
+  if (K==='LOGOUT')    return {...state, currentUser:null, loginError:null, authLoading:false};
   if (K==='CLR_ERR')   return {...state, loginError:null};
-  if (K==='CHG_PWD')   return {...state, users: state.users.map(u=>u.id===action.payload.id?{...u,senha:action.payload.senha}:u)};
+  if (K==='LOAD_DATA') return {
+    ...state,
+    colaboradores: action.payload.colaboradores || state.colaboradores,
+    competencias:  action.payload.competencias  || state.competencias,
+    avaliacoes:    action.payload.avaliacoes    || state.avaliacoes,
+    requisitos:    action.payload.requisitos    || state.requisitos,
+  };
   return state;
+}
+
+/* ---------- CLOUD SYNC ---------- */
+const avalToDb = a => ({id:a.id, colaborador_id:a.colaboradorId, competencia_id:a.competenciaId, peso:a.peso, atual:a.atual, esperado:a.esperado, plano:a.plano||null, responsavel:a.responsavel||null, prazo:a.prazo||null, carreira:a.carreira||null, data_avaliacao:a.dataAvaliacao||null});
+const avalFromDb = a => ({id:a.id, colaboradorId:a.colaborador_id, competenciaId:a.competencia_id, peso:a.peso, atual:a.atual, esperado:a.esperado, plano:a.plano||'', responsavel:a.responsavel||'', prazo:a.prazo||'', carreira:a.carreira||'', dataAvaliacao:a.data_avaliacao||''});
+const reqToDb = r => ({id:r.id, funcao:r.funcao, nivel:r.nivel, competencia_id:r.competenciaId, esperado:r.esperado, peso:r.peso});
+const reqFromDb = r => ({id:r.id, funcao:r.funcao, nivel:r.nivel, competenciaId:r.competencia_id, esperado:r.esperado, peso:r.peso});
+
+async function loadDataFromCloud(dispatch, seedFallback) {
+  try {
+    const [c, cp, a, r] = await Promise.all([
+      sb.from('colaboradores').select('*').order('id'),
+      sb.from('competencias').select('*').order('id'),
+      sb.from('avaliacoes').select('*'),
+      sb.from('requisitos').select('*'),
+    ]);
+    if (c.error || cp.error || a.error || r.error) throw (c.error || cp.error || a.error || r.error);
+    const total = (c.data?.length||0) + (cp.data?.length||0) + (a.data?.length||0) + (r.data?.length||0);
+    if (total === 0 && seedFallback) {
+      console.log('[cloud] DB vazia. A semear com SEED_*');
+      await Promise.all([
+        sb.from('colaboradores').upsert(seedFallback.colaboradores),
+        sb.from('competencias').upsert(seedFallback.competencias),
+        sb.from('avaliacoes').upsert(seedFallback.avaliacoes.map(avalToDb)),
+        sb.from('requisitos').upsert(seedFallback.requisitos.map(reqToDb)),
+      ]);
+      dispatch({type:'LOAD_DATA', payload: seedFallback});
+      return { seeded: true };
+    }
+    dispatch({type:'LOAD_DATA', payload: {
+      colaboradores: c.data || [],
+      competencias:  cp.data || [],
+      avaliacoes:    (a.data || []).map(avalFromDb),
+      requisitos:    (r.data || []).map(reqFromDb),
+    }});
+    return { seeded: false };
+  } catch(e) {
+    console.warn('[cloud] load falhou', e);
+    return { error: e };
+  }
+}
+
+async function syncTableDiff(table, localRows, mapToDb) {
+  const { data: dbIdsRaw, error: e1 } = await sb.from(table).select('id');
+  if (e1) throw e1;
+  const localIds = new Set(localRows.map(x => x.id));
+  const toDelete = (dbIdsRaw || []).map(x => x.id).filter(id => !localIds.has(id));
+  if (toDelete.length) {
+    const { error: e2 } = await sb.from(table).delete().in('id', toDelete);
+    if (e2) throw e2;
+  }
+  if (localRows.length) {
+    const { error: e3 } = await sb.from(table).upsert(localRows.map(mapToDb));
+    if (e3) throw e3;
+  }
+}
+
+async function syncDataToCloud(state) {
+  try {
+    await Promise.all([
+      syncTableDiff('colaboradores', state.colaboradores, x => x),
+      syncTableDiff('competencias',  state.competencias,  x => x),
+      syncTableDiff('avaliacoes',    state.avaliacoes,    avalToDb),
+      syncTableDiff('requisitos',    state.requisitos,    reqToDb),
+    ]);
+    return { ok: true };
+  } catch(e) {
+    console.warn('[cloud] sync falhou', e);
+    return { ok: false, error: e };
+  }
 }
 
 /* ---------- UTILS ---------- */
@@ -504,7 +651,7 @@ function Sidebar({route, setRoute, config, currentUser, dispatch, onChangePwd, c
           ${menuOpen && html`
             <div class=${'absolute bg-white rounded-lg shadow-xl border border-ink-200 overflow-hidden z-10 '+(!showText?'md:left-full md:bottom-0 md:ml-2 md:w-48 bottom-full left-2 right-2 mb-2':'bottom-full left-2 right-2 mb-2')}>
               <button onClick=${()=>{setMenuOpen(false);onChangePwd();}} class="w-full text-left px-3 py-2 text-sm text-ink-700 hover:bg-ink-50 flex items-center gap-2"><${Icon.Settings} size=${14}/> Alterar palavra-passe</button>
-              <button onClick=${()=>{setMenuOpen(false);dispatch({type:'LOGOUT'});}} class="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2"><${Icon.Close} size=${14}/> Terminar sessão</button>
+              <button onClick=${async ()=>{setMenuOpen(false); try { await sb.auth.signOut(); } catch(e){} dispatch({type:'LOGOUT'});}} class="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2"><${Icon.Close} size=${14}/> Terminar sessão</button>
             </div>`}
           <button onClick=${()=>setMenuOpen(!menuOpen)} title=${!showText?currentUser.nome:''}
             class=${'w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-ink-800/70 transition '+(!showText?'md:justify-center':'')}>
@@ -1467,61 +1614,68 @@ function AdminConfig({state, dispatch}) {
     </${Card}>`;
 }
 
+async function fetchProfiles(dispatch) {
+  try {
+    const { data, error } = await sb.from('profiles').select('id, nome, email, papel, ativo, created_at').order('created_at', { ascending: true });
+    if (error) throw error;
+    dispatch({type:'SET_PROFILES', payload: data || []});
+    return data || [];
+  } catch(e) { console.warn('fetchProfiles failed', e); return []; }
+}
+
 function AdminUsers({state, dispatch}) {
-  const [editing, setEditing] = useState(null);
-  const [adding, setAdding] = useState(false);
-  const UserForm = ({value, onSave, onClose}) => {
-    const [f, setF] = useState(value || {nome:'',email:'',papel:'colab',ativo:true});
-    return html`
-      <div class="space-y-4">
-        <${Field} label="Nome"><${Input} value=${f.nome} onInput=${e=>setF({...f,nome:e.target.value})}/></${Field}>
-        <${Field} label="Email"><${Input} type="email" value=${f.email} onInput=${e=>setF({...f,email:e.target.value})}/></${Field}>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <${Field} label="Papel"><${Select} value=${f.papel} onChange=${e=>setF({...f,papel:e.target.value})}>
-            ${Object.entries(PAPEIS).map(([k,v])=>html`<option key=${k} value=${k}>${v}</option>`)}</${Select}></${Field}>
-          <${Field} label="Estado"><${Select} value=${String(f.ativo)} onChange=${e=>setF({...f,ativo:e.target.value==='true'})}>
-            <option value="true">Ativo</option><option value="false">Inativo</option></${Select}></${Field}>
-        </div>
-        <div class="flex justify-end gap-2 pt-2">
-          <${Button} variant="outline" onClick=${onClose}>Cancelar</${Button}>
-          <${Button} onClick=${()=>{if(!f.nome||!f.email){alert('Nome e email obrigatórios');return;} onSave(f); onClose();}}>Guardar</${Button}>
-        </div>
-      </div>`;
+  const [status, setStatus] = useState('');
+  const [busyId, setBusyId] = useState(null);
+  useEffect(() => { fetchProfiles(dispatch); }, []);
+
+  const updateProfile = async (id, patch) => {
+    setBusyId(id); setStatus('');
+    try {
+      const { error } = await sb.from('profiles').update(patch).eq('id', id);
+      if (error) throw error;
+      await fetchProfiles(dispatch);
+      setStatus('✓ Atualizado.');
+    } catch(e) { setStatus('✗ '+(e.message||'erro')); }
+    setBusyId(null);
   };
+
   return html`
     <${Card}>
       <div class="p-4 flex items-center justify-between">
         <div><h3 class="font-semibold text-ink-900">Utilizadores</h3>
-          <p class="text-xs text-ink-500">${state.users.length} utilizadores</p></div>
-        <${Button} onClick=${()=>setAdding(true)}><${Icon.Plus} size=${16}/> Novo</${Button}>
+          <p class="text-xs text-ink-500">${state.users.length} contas registadas via Supabase Auth</p></div>
+        <${Button} variant="outline" onClick=${()=>fetchProfiles(dispatch)}>Atualizar</${Button}>
       </div>
+      ${status && html`<div class=${'mx-4 mb-3 p-2 rounded text-sm '+(status.startsWith('✓')?'bg-emerald-50 text-emerald-700':'bg-rose-50 text-rose-700')}>${status}</div>`}
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead><tr class="text-left text-xs font-medium text-ink-500 uppercase tracking-wide border-b border-ink-100 bg-ink-50/50">
             <th class="px-4 py-3">Nome</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Papel</th>
-            <th class="px-4 py-3">Estado</th><th class="px-4 py-3 text-right">Ações</th>
+            <th class="px-4 py-3">Estado</th>
           </tr></thead>
           <tbody>
             ${state.users.map(u => html`
               <tr key=${u.id} class="border-b border-ink-50 hover:bg-ink-50/60">
                 <td class="px-4 py-3 font-medium text-ink-800">${u.nome}</td>
                 <td class="px-4 py-3 text-ink-600">${u.email}</td>
-                <td class="px-4 py-3"><${Badge} color=${u.papel==='admin'?'violet':u.papel==='gestor'?'brand':'ink'}>${PAPEIS[u.papel]}</${Badge}></td>
-                <td class="px-4 py-3"><${Badge} color=${u.ativo?'emerald':'rose'}>${u.ativo?'Ativo':'Inativo'}</${Badge}></td>
-                <td class="px-4 py-3 text-right">
-                  <button onClick=${()=>setEditing(u)} class="p-1.5 rounded hover:bg-ink-100 text-ink-500"><${Icon.Edit} size=${16}/></button>
-                  <button onClick=${()=>{if(confirm('Remover?')) dispatch({type:'DEL_USER',payload:u.id});}} class="p-1.5 rounded hover:bg-rose-50 text-rose-500"><${Icon.Trash} size=${16}/></button>
+                <td class="px-4 py-3">
+                  <select disabled=${busyId===u.id || u.id===state.currentUser?.id} value=${u.papel} onChange=${e=>updateProfile(u.id, {papel:e.target.value})} class="px-2 py-1 rounded border border-ink-200 text-sm bg-white">
+                    ${Object.entries(PAPEIS).map(([k,v])=>html`<option key=${k} value=${k}>${v}</option>`)}
+                  </select>
+                </td>
+                <td class="px-4 py-3">
+                  <button disabled=${busyId===u.id || u.id===state.currentUser?.id} onClick=${()=>updateProfile(u.id, {ativo:!u.ativo})} class=${'px-2 py-1 rounded text-xs font-medium '+(u.ativo?'bg-emerald-50 text-emerald-700 hover:bg-emerald-100':'bg-rose-50 text-rose-700 hover:bg-rose-100')}>
+                    ${u.ativo?'Ativo':'Inativo'}
+                  </button>
                 </td>
               </tr>`)}
+            ${state.users.length===0 && html`<tr><td colSpan=${4} class="px-4 py-8 text-center text-ink-500">Sem utilizadores registados ainda. Partilha o URL da app para que os colegas criem conta.</td></tr>`}
           </tbody>
         </table>
       </div>
-      <${Modal} open=${adding} onClose=${()=>setAdding(false)} title="Novo utilizador">
-        <${UserForm} onSave=${f=>dispatch({type:'ADD_USER',payload:f})} onClose=${()=>setAdding(false)}/>
-      </${Modal}>
-      <${Modal} open=${!!editing} onClose=${()=>setEditing(null)} title="Editar utilizador">
-        ${editing && html`<${UserForm} value=${editing} onSave=${f=>dispatch({type:'UPD_USER',payload:{...f,id:editing.id}})} onClose=${()=>setEditing(null)}/>`}
-      </${Modal}>
+      <div class="p-4 text-xs text-ink-500 border-t border-ink-100">
+        Não podes alterar o teu próprio papel/estado aqui (evita lockout). Para isso, pede a outro admin ou usa o SQL Editor do Supabase.
+      </div>
     </${Card}>`;
 }
 
@@ -1570,20 +1724,66 @@ function AdminBackup({state, dispatch}) {
     </${Card}>`;
 }
 
-const SQL_SUPABASE = `-- Schema SQL para Supabase (cole no SQL Editor)
+const SQL_SUPABASE = `-- Schema SQL para Supabase (cole no SQL Editor e clica em Run)
+
+-- 1. Tabelas de dados
 create table if not exists colaboradores (id int primary key, nome text, dep text, funcao text, nivel text, site text, potencial int);
 create table if not exists competencias (id text primary key, nome text, tipo text, iso text);
 create table if not exists avaliacoes (id text primary key, colaborador_id int, competencia_id text, peso int, atual int, esperado int, plano text, responsavel text, prazo text, carreira text, data_avaliacao date);
 create table if not exists requisitos (id text primary key, funcao text, nivel text, competencia_id text, esperado int, peso int);
+
+-- 2. Tabela de perfis (ligada ao Supabase Auth)
+create table if not exists profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  nome text not null,
+  email text unique not null,
+  papel text not null default 'usuario' check (papel in ('admin','coordenador','usuario')),
+  ativo boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+-- 3. RLS
 alter table colaboradores enable row level security;
 alter table competencias enable row level security;
 alter table avaliacoes enable row level security;
 alter table requisitos enable row level security;
--- Política simples (permitir tudo a utilizadores autenticados):
-create policy "auth" on colaboradores for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "auth" on competencias for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "auth" on avaliacoes  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "auth" on requisitos  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');`;
+alter table profiles enable row level security;
+
+drop policy if exists "auth_all" on colaboradores;
+drop policy if exists "auth_all" on competencias;
+drop policy if exists "auth_all" on avaliacoes;
+drop policy if exists "auth_all" on requisitos;
+create policy "auth_all" on colaboradores for all using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "auth_all" on competencias  for all using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "auth_all" on avaliacoes    for all using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "auth_all" on requisitos    for all using (auth.uid() is not null) with check (auth.uid() is not null);
+
+drop policy if exists "profiles_read" on profiles;
+drop policy if exists "profiles_update_own" on profiles;
+drop policy if exists "profiles_insert" on profiles;
+create policy "profiles_read" on profiles for select using (auth.uid() is not null);
+create policy "profiles_update_own" on profiles for update using (auth.uid() = id);
+create policy "profiles_insert" on profiles for insert with check (auth.uid() = id);
+
+-- 4. Trigger: cria profile automaticamente em cada signup
+create or replace function handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, nome, email, papel)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'nome', split_part(new.email, '@', 1)),
+    new.email,
+    'usuario'
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function handle_new_user();`;
 
 function AdminSupabase({state, dispatch}) {
   const [f, setF] = useState({url:state.config.supabaseUrl, key:state.config.supabaseKey});
@@ -1604,16 +1804,16 @@ function AdminSupabase({state, dispatch}) {
     setBusy(false);
   };
   const sync = async () => {
-    if (!state.config.cloudHabilitado) return alert('Testa a ligação primeiro.');
-    setBusy(true); setStatus('A sincronizar…');
-    try {
-      const sb = window.supabase.createClient(f.url, f.key);
-      await sb.from('colaboradores').upsert(state.colaboradores);
-      await sb.from('competencias').upsert(state.competencias);
-      await sb.from('requisitos').upsert(state.requisitos.map(r=>({...r, competencia_id:r.competenciaId, competenciaId:undefined})));
-      await sb.from('avaliacoes').upsert(state.avaliacoes.map(a=>({...a, colaborador_id:a.colaboradorId, competencia_id:a.competenciaId, data_avaliacao:a.dataAvaliacao, colaboradorId:undefined, competenciaId:undefined, dataAvaliacao:undefined})));
-      setStatus('✓ Sincronização concluída.');
-    } catch(e) { setStatus('✗ Erro: '+e.message); }
+    setBusy(true); setStatus('A enviar para a cloud…');
+    const res = await syncDataToCloud(state);
+    setStatus(res.ok ? '✓ Sincronização concluída.' : ('✗ Erro: '+(res.error?.message||'')));
+    setBusy(false);
+  };
+  const reload = async () => {
+    if (!confirm('Recarregar dados da cloud? Isto substitui o que tens no browser.')) return;
+    setBusy(true); setStatus('A descarregar da cloud…');
+    const res = await loadDataFromCloud(dispatch, null);
+    setStatus(res.error ? ('✗ Erro: '+res.error.message) : '✓ Dados recarregados.');
     setBusy(false);
   };
   const copySQL = () => { navigator.clipboard.writeText(SQL_SUPABASE); setStatus('SQL copiado para o clipboard.'); };
@@ -1629,11 +1829,13 @@ function AdminSupabase({state, dispatch}) {
           <${Input} value=${f.url} onInput=${e=>setF({...f,url:e.target.value})} placeholder="https://xxx.supabase.co"/></${Field}>
         <${Field} label="Anon Key" hint="Chave pública (anon public key)">
           <${Input} type="password" value=${f.key} onInput=${e=>setF({...f,key:e.target.value})}/></${Field}>
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap">
           <${Button} onClick=${save}>Guardar</${Button}>
           <${Button} variant="outline" onClick=${test} disabled=${busy}>Testar ligação</${Button}>
-          <${Button} variant="success" onClick=${sync} disabled=${busy||!state.config.cloudHabilitado}>Sincronizar agora</${Button}>
+          <${Button} variant="success" onClick=${sync} disabled=${busy}>Enviar para a cloud</${Button}>
+          <${Button} variant="outline" onClick=${reload} disabled=${busy}>Recarregar da cloud</${Button}>
         </div>
+        <div class="text-xs text-ink-500">A sincronização para a cloud é automática 1.5s após cada alteração. Estes botões são para forçar manualmente.</div>
         ${status && html`<div class=${'p-3 rounded-lg text-sm '+(status.startsWith('✓')?'bg-emerald-50 text-emerald-700':status.startsWith('✗')?'bg-rose-50 text-rose-700':'bg-ink-50 text-ink-700')}>${status}</div>`}
       </div>
       <div class="border-t border-ink-100 pt-4">
@@ -1695,12 +1897,43 @@ function Admin({state, dispatch}) {
 
 /* ---------- LOGIN ---------- */
 function Login({dispatch, config, loginError}) {
+  const [mode, setMode] = useState('login');
+  const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [show, setShow] = useState(false);
-  const submit = (e) => { e?.preventDefault(); if(!email||!senha) return; dispatch({type:'LOGIN',payload:{email,senha}}); };
-  const fill = (em, sn) => { setEmail(em); setSenha(sn); dispatch({type:'CLR_ERR'}); dispatch({type:'LOGIN',payload:{email:em,senha:sn}}); };
-  const resetData = () => { if (confirm('Limpar dados guardados e recarregar? (utilizadores demo serão restaurados)')) { localStorage.removeItem(STORE_KEY); location.reload(); } };
+  const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState('');
+
+  const submit = async (e) => {
+    e?.preventDefault();
+    if(!email||!senha) return;
+    setBusy(true); setInfo(''); dispatch({type:'CLR_ERR'});
+    try {
+      if (mode === 'login') {
+        const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password: senha });
+        if (error) throw error;
+      } else {
+        if (!nome.trim()) { dispatch({type:'SET_LOGIN_ERROR', payload:'Indica o teu nome.'}); setBusy(false); return; }
+        if (senha.length < 6) { dispatch({type:'SET_LOGIN_ERROR', payload:'Palavra-passe precisa de pelo menos 6 caracteres.'}); setBusy(false); return; }
+        const { data, error } = await sb.auth.signUp({
+          email: email.trim(),
+          password: senha,
+          options: { data: { nome: nome.trim() } }
+        });
+        if (error) throw error;
+        if (data?.user && !data?.session) {
+          setInfo('Conta criada. Verifica o teu email para confirmar antes de fazer login.');
+          setMode('login');
+        }
+      }
+    } catch(err) {
+      dispatch({type:'SET_LOGIN_ERROR', payload: err.message || 'Erro ao autenticar.'});
+    }
+    setBusy(false);
+  };
+
+  const resetData = () => { if (confirm('Limpar dados locais e recarregar?')) { localStorage.removeItem(STORE_KEY); location.reload(); } };
 
   return html`
     <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
@@ -1713,11 +1946,13 @@ function Login({dispatch, config, loginError}) {
               ${config.logo ? html`<img src=${config.logo} class="w-full h-full rounded-2xl object-cover"/>` : html`<${Icon.Grid} size=${28} class="text-white"/>`}
             </div>
             <h1 class="text-xl font-semibold text-ink-900">${config.empresa}</h1>
-            <p class="text-sm text-ink-500 mt-1">Matriz de Competências · Acesso restrito</p>
+            <p class="text-sm text-ink-500 mt-1">Matriz de Competências · ${mode==='login'?'Entrar':'Criar conta'}</p>
           </div>
           <form onSubmit=${submit} class="px-8 pb-6 space-y-4">
-            <${Field} label="Email"><${Input} type="email" value=${email} onInput=${e=>{setEmail(e.target.value);dispatch({type:'CLR_ERR'});}} placeholder="utilizador@empresa.pt" autoFocus/></${Field}>
-            <${Field} label="Palavra-passe">
+            ${mode==='signup' && html`
+              <${Field} label="Nome completo"><${Input} value=${nome} onInput=${e=>{setNome(e.target.value);dispatch({type:'CLR_ERR'});}} placeholder="O teu nome" autoFocus/></${Field}>`}
+            <${Field} label="Email"><${Input} type="email" value=${email} onInput=${e=>{setEmail(e.target.value);dispatch({type:'CLR_ERR'});}} placeholder="utilizador@empresa.pt" autoFocus=${mode==='login'}/></${Field}>
+            <${Field} label="Palavra-passe" hint=${mode==='signup'?'Mínimo 6 caracteres':''}>
               <div class="relative">
                 <${Input} type=${show?'text':'password'} value=${senha} onInput=${e=>{setSenha(e.target.value);dispatch({type:'CLR_ERR'});}} class="pr-10"/>
                 <button type="button" onClick=${()=>setShow(!show)} class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded text-ink-400 hover:text-ink-700">
@@ -1726,52 +1961,51 @@ function Login({dispatch, config, loginError}) {
               </div>
             </${Field}>
             ${loginError && html`<div class="p-3 rounded-lg bg-rose-50 text-rose-700 text-sm border border-rose-100">${loginError}</div>`}
-            <button type="submit" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-medium shadow-sm transition">Entrar</button>
+            ${info && html`<div class="p-3 rounded-lg bg-emerald-50 text-emerald-700 text-sm border border-emerald-100">${info}</div>`}
+            <button type="submit" disabled=${busy} class="w-full py-2.5 rounded-lg bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-medium shadow-sm transition disabled:opacity-60">
+              ${busy ? (mode==='login'?'A entrar…':'A criar conta…') : (mode==='login'?'Entrar':'Criar conta')}
+            </button>
           </form>
-          <div class="px-8 py-4 bg-ink-50 border-t border-ink-100">
-            <div class="text-xs font-medium text-ink-500 uppercase tracking-wide mb-2">Credenciais demo</div>
-            <div class="space-y-1.5 text-xs">
-              <button type="button" onClick=${()=>fill('admin@empresa.pt','admin123')} class="w-full flex items-center justify-between p-2 rounded-md bg-white border border-ink-200 hover:border-brand-400 transition group">
-                <span class="flex items-center gap-2"><${Badge} color="violet">Admin</${Badge}><span class="text-ink-600">admin@empresa.pt</span></span>
-                <span class="text-ink-400 font-mono group-hover:text-brand-600">admin123</span>
-              </button>
-              <button type="button" onClick=${()=>fill('coord@empresa.pt','coord123')} class="w-full flex items-center justify-between p-2 rounded-md bg-white border border-ink-200 hover:border-brand-400 transition group">
-                <span class="flex items-center gap-2"><${Badge} color="brand">Coordenador</${Badge}><span class="text-ink-600">coord@empresa.pt</span></span>
-                <span class="text-ink-400 font-mono group-hover:text-brand-600">coord123</span>
-              </button>
-              <button type="button" onClick=${()=>fill('user@empresa.pt','user123')} class="w-full flex items-center justify-between p-2 rounded-md bg-white border border-ink-200 hover:border-brand-400 transition group">
-                <span class="flex items-center gap-2"><${Badge} color="emerald">Utilizador</${Badge}><span class="text-ink-600">user@empresa.pt</span></span>
-                <span class="text-ink-400 font-mono group-hover:text-brand-600">user123</span>
-              </button>
-            </div>
+          <div class="px-8 py-4 bg-ink-50 border-t border-ink-100 text-center text-sm">
+            ${mode==='login' ? html`
+              <span class="text-ink-500">Não tens conta?</span>
+              <button type="button" onClick=${()=>{setMode('signup');setInfo('');dispatch({type:'CLR_ERR'});}} class="ml-1 text-brand-600 font-medium hover:text-brand-700">Criar conta</button>` : html`
+              <span class="text-ink-500">Já tens conta?</span>
+              <button type="button" onClick=${()=>{setMode('login');setInfo('');dispatch({type:'CLR_ERR'});}} class="ml-1 text-brand-600 font-medium hover:text-brand-700">Entrar</button>`}
           </div>
         </div>
-        <div class="text-center text-xs text-white/60 mt-4">Matriz de Competências · v2.1 · <button type="button" onClick=${resetData} class="underline hover:text-white">Limpar dados</button></div>
+        <div class="text-center text-xs text-white/60 mt-4">Matriz de Competências · v2.1 · <button type="button" onClick=${resetData} class="underline hover:text-white">Limpar dados locais</button></div>
       </div>
     </div>`;
 }
 
 /* ---------- CHANGE PASSWORD MODAL ---------- */
 function ChangePassword({user, dispatch, onClose}) {
-  const [curr, setCurr] = useState('');
   const [nv1, setNv1] = useState('');
   const [nv2, setNv2] = useState('');
   const [err, setErr] = useState('');
-  const save = () => {
-    const u = user;
-    if (curr !== u.senha) return setErr('Palavra-passe atual incorreta.');
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setErr('');
     if (nv1.length < 6) return setErr('Nova palavra-passe precisa de pelo menos 6 caracteres.');
     if (nv1 !== nv2) return setErr('A confirmação não coincide.');
-    dispatch({type:'CHG_PWD', payload:{id:u.id, senha:nv1}});
-    onClose(); alert('Palavra-passe alterada.');
+    setBusy(true);
+    try {
+      const { error } = await sb.auth.updateUser({ password: nv1 });
+      if (error) throw error;
+      onClose(); alert('Palavra-passe alterada.');
+    } catch(e) {
+      setErr(e.message || 'Erro ao alterar palavra-passe.');
+    }
+    setBusy(false);
   };
   return html`
     <div class="space-y-4">
-      <${Field} label="Palavra-passe atual"><${Input} type="password" value=${curr} onInput=${e=>setCurr(e.target.value)}/></${Field}>
+      <div class="text-xs text-ink-500">A palavra-passe é gerida pelo Supabase Auth. A nova será aplicada imediatamente.</div>
       <${Field} label="Nova palavra-passe"><${Input} type="password" value=${nv1} onInput=${e=>setNv1(e.target.value)}/></${Field}>
       <${Field} label="Confirmar nova palavra-passe"><${Input} type="password" value=${nv2} onInput=${e=>setNv2(e.target.value)}/></${Field}>
       ${err && html`<div class="p-2 rounded bg-rose-50 text-rose-700 text-sm">${err}</div>`}
-      <div class="flex justify-end gap-2"><${Button} variant="outline" onClick=${onClose}>Cancelar</${Button}><${Button} onClick=${save}>Alterar</${Button}></div>
+      <div class="flex justify-end gap-2"><${Button} variant="outline" onClick=${onClose}>Cancelar</${Button}><${Button} onClick=${save} disabled=${busy}>${busy?'A alterar…':'Alterar'}</${Button}></div>
     </div>`;
 }
 
@@ -2129,6 +2363,26 @@ function AIAssistant({state, dispatch, onOpenColab}) {
 }
 
 /* ---------- APP ROOT ---------- */
+async function loadUserProfile(userId, dispatch) {
+  try {
+    const { data, error } = await sb.from('profiles').select('id, nome, email, papel, ativo').eq('id', userId).maybeSingle();
+    if (error) throw error;
+    if (!data) { dispatch({type:'SET_LOGIN_ERROR', payload:'Perfil não encontrado. Contacta o administrador.'}); await sb.auth.signOut(); return; }
+    if (!data.ativo) { dispatch({type:'SET_LOGIN_ERROR', payload:'Conta desativada. Contacta o administrador.'}); await sb.auth.signOut(); return; }
+    dispatch({type:'SET_AUTH_USER', payload: data});
+    fetchProfiles(dispatch);
+    loadDataFromCloud(dispatch, {
+      colaboradores: SEED_COLABORADORES,
+      competencias:  SEED_COMPETENCIAS,
+      avaliacoes:    SEED_AVALIACOES,
+      requisitos:    SEED_REQUISITOS,
+    });
+  } catch(e) {
+    console.error('loadUserProfile', e);
+    dispatch({type:'SET_LOGIN_ERROR', payload: e.message || 'Erro ao carregar perfil.'});
+  }
+}
+
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, initialState);
   const [route, setRoute] = useState('dashboard');
@@ -2137,8 +2391,51 @@ function App() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [aiColabView, setAiColabView] = useState(null);
   const [aiColabEdit, setAiColabEdit] = useState(null);
+
+  useEffect(() => {
+    let unsub = null;
+    (async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session?.user) {
+        await loadUserProfile(session.user.id, dispatch);
+      } else {
+        dispatch({type:'SET_AUTH_LOADING', payload:false});
+      }
+      const { data: sub } = sb.auth.onAuthStateChange(async (event, sess) => {
+        if (event === 'SIGNED_IN' && sess?.user) {
+          await loadUserProfile(sess.user.id, dispatch);
+        } else if (event === 'SIGNED_OUT') {
+          dispatch({type:'LOGOUT'});
+        } else if (event === 'TOKEN_REFRESHED' && sess?.user && !state.currentUser) {
+          await loadUserProfile(sess.user.id, dispatch);
+        }
+      });
+      unsub = sub?.subscription;
+    })();
+    return () => { try { unsub?.unsubscribe(); } catch(e){} };
+  }, []);
+
   useEffect(() => { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }, [state]);
   useEffect(() => { localStorage.setItem('sidebar_collapsed', sidebarCollapsed?'1':'0'); }, [sidebarCollapsed]);
+
+  // Auto-sync para o Supabase (debounced 1.5s após última mudança)
+  const syncedOnce = useRef(false);
+  useEffect(() => {
+    if (!state.currentUser) return;
+    if (!syncedOnce.current) { syncedOnce.current = true; return; } // skip the initial load
+    const t = setTimeout(() => { syncDataToCloud(state); }, 1500);
+    return () => clearTimeout(t);
+  }, [state.colaboradores, state.competencias, state.avaliacoes, state.requisitos]);
+
+  if (state.authLoading) {
+    return html`
+      <div class="min-h-screen flex items-center justify-center" style=${{background:'linear-gradient(135deg,#0f172a 0%,#1e3a8a 60%,#172554 100%)'}}>
+        <div class="text-white/80 text-sm flex items-center gap-3">
+          <div class="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
+          A verificar sessão…
+        </div>
+      </div>`;
+  }
 
   if (!state.currentUser) {
     return html`<${Login} dispatch=${dispatch} config=${state.config} loginError=${state.loginError}/>`;
